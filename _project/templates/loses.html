@@ -1,0 +1,207 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href=" {% static "css/style.css" %} ">
+    <link rel="stylesheet" href=" {% static "css/all.min.css" %} ">
+    <link rel="stylesheet" href=" {% static "css/fontawesome.min.css" %} ">
+    <title>loses page</title>
+</head>
+<body>
+    <div class="maincon">
+        <div class="window" id="windowcon">
+            <i id="closedetwin" class="fa-solid fa-xmark close" ></i>
+            <div id="detailcontainer">
+                
+            </div>
+        </div>
+        <div class="rightcon">
+            <div class="minhead">
+                <h3>friends</h3>
+            </div>
+            <ul>
+                <i class="fa-solid fa-arrow-left" id="rightconexpend"></i>
+                <a href="{% url "home" %}">
+                    <li>
+                        <i class="fa-solid fa-house-circle-check"></i>
+                        <span>الرئيسية</span>
+                    </li>
+                </a>
+                <a href= "{% url "sales" %}">
+                    <li>
+                        <i class="fa-solid fa-users"></i>
+                        <span>بيع</span>
+                    </li>
+                </a>
+                <a href="{% url "tempsales" %}">
+                    <li>
+                        <i class="fa-solid fa-hand-holding-dollar"></i>
+                        <span>الاجل</span>
+                    </li>
+                </a>
+                <a href="{% url "loses" %}">
+                    <li class="activeli">
+                        <i class="fa-solid fa-user-tie"></i>
+                        <span>المصروفات</span>
+                    </li>
+                </a>
+                <a href="{% url "items" %}">
+                    <li>
+                        <i class="fa-solid fa-file-export"></i>
+                        <span>اضافة بضاعة</span>
+                    </li>
+                </a>
+            </ul>
+            <div class="minfoot">
+                <a href="{% url "logout" %}">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                </a>
+                <span></span>
+            </div>
+        </div>        <div class="leftcon">
+            <div class="status">
+                <h2>اضافة مصروفات</h2>
+                <form method="post" action="" style="width: 100%;display: flex;align-items: center;justify-content: center;flex-direction: column;">
+                    {% csrf_token %}
+                    {% if messages %}
+                    <ul class="messages">
+                        {% for message in messages %}
+                            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                    <div class="addsell">
+                        <div class="wraper">
+                            <div class="first">
+                                <select name="lose_type" class="search_bar" id="">
+                                    <option value="مصروف">مصروف</option>
+                                    <option value="هادر">هادر</option>
+                                    <option value="ايجار">ايجار</option>
+                                    <option value="ديون">ديون</option>
+                                    <option value="اخرى">اخرى</option>
+                                </select>
+                                <span>النوع</span>
+                            </div>
+                        </div>
+                        <div class="wraper" >
+                            <div class="second">
+                                <input name='lose_money'  type="number" id="papers" class="search_bar" min="1" required >
+                                <span>المبلغ</span>
+                            </div>
+                        </div>
+                        <div class="wraper" >
+                            <div class="second">
+                                <input name='date'  type="date" id="papers" class="search_bar" min="1" required >
+                                <span>التاريخ</span>
+                            </div>
+                        </div>
+                        <div class="wraper">
+                            <div class="second">
+                                <input name='notes' step="0.01"  type="text" id="price" class="search_bar" min="0" >
+                                <span>ملاحظات</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button name="addLose" class="sellbtn">تأكيد</button>
+                </form>
+            </div>
+            <div class="status">
+                <h2>جميع المصروفات</h2> 
+                <div style="width: 100%; overflow: scroll; height: fit-content;">
+                    {% if loses %}
+                    <table class="sellstable">
+                        
+                        <thead>
+                            <tr>
+                                <th>النوع</th>
+                                <th>المبلغ</th>
+                                <th>التاريخ</th>
+                                <th>ملاحظات</th>
+                                <th>حذف</th>
+                                <th>تعديل</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for lose in loses %}
+                            <tr>
+                                <td>{{lose.lose_type}}</td>
+                                <td>{{lose.lose_money}}</td>
+                                <td>{{lose.date|date:"20y/m/d"}}</td>
+                                <td>{{lose.notes}}</td>
+                                <td><button class="sellsdel" id="sellsdel" metadata='
+                                    <form method="post" action="{% url "loseDelete" lose.id %}" style="width: 100%;display: flex;align-items: center;justify-content: center;flex-direction: column;">
+                                        {% csrf_token %}
+                                        <div class="addsell" style="padding: 20px;flex-direction:column;">
+                                            <h3 style="color:#3D4B64;">حذف المصروف</h3>
+                                            <h3 style="color:#FF0000;">"حذف المصروف سيؤدى الى حذف جميع المتعلقات به"</h3>
+                                            <br>
+                                            <i class="fa-regular fa-trash-can" style="color: #ff3333;font-size: 100px;"></i>
+                                            <br>
+                                        </div>
+                                        <button name="loseDelete" class="sellbtn">حذف</button>
+                                    </form>
+                                    '><i class="fa-solid fa-trash-can"></i></button></td>
+                                    <td><button class="sellsup" id="sellsup" metadata='
+                                    <form method="post" action="{% url "loseUpdate" lose.id %}" style="width: 100%;display: flex;align-items: center;justify-content: center;flex-direction: column;">
+                                        {% csrf_token %}
+                                        <h3 style="color:#3D4B64;">تعديل مصروف</h3>
+                                        <div class="addsell">
+                                            <div class="wraper">
+                                                <div class="first">
+                                                    <div class="first">
+                                                        <input value="{{lose.lose_type}}" type="text" name="lose_type" id="" class="search_bar" required>
+                                                        <span>النوع</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="wraper" style="width: 20%;">
+                                                <div class="second">
+                                                    <input value="{{lose.lose_money}}"  min="1" name="lose_money" type="number" id="search_bar" class="search_bar" required>
+                                                    <span>المبلغ</span>
+                                                </div>
+                                            </div>
+                                            <div class="wraper">
+                                                <div class="first">
+                                                    <div class="first">
+                                                        <input value="{{lose.notes}}" type="text" name="notes" id="" class="search_bar" required>
+                                                        <span>ملاحظات</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button name="loseUpdate" class="sellbtn">تعديل</button>
+                                    </form>
+                                    '><i class="fa-solid fa-pencil"></i></button></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                        <div class="btnnav">
+                            <div>
+                                {% if loses.has_previous %}
+                                <a href="?page=1"><i class="fa-solid fa-angles-right"></i></a>
+                                <a href="?page={{ loses.previous_page_number }}"><i class="fa-solid fa-chevron-right"></i></a>
+                                {% endif %}
+                                <p>صفحة {{ loses.number }} من {{ loses.paginator.num_pages }}</p>
+                            </div>
+                            <div>
+                                {% if loses.has_next %}
+                                <a href="?page={{ loses.next_page_number }}"><i class="fa-solid fa-chevron-left"></i></a>
+                                <a href="?page={{ loses.paginator.num_pages }}"><i class="fa-solid fa-angles-left"></i></a>
+                                {% endif %}
+        
+                            </div>
+                        </div>
+        
+                        {% else %}
+                        <h2 style="width: 100%;text-align: center;color: #303C54;margin-bottom: 20px;">لا يوجد مصروفات</h2>
+                        {% endif %}
+                </div>
+        </div>
+    </div>
+    <script src=" {% static "js/home.js" %} "></script>
+</body>
+</html>

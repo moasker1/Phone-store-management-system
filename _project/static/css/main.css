@@ -1,0 +1,235 @@
+*{
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    font-family: "Alexandria", sans-serif;
+    direction: rtl;
+    transition: 0.2s ease-in-out;
+}
+.backcon{
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    background: linear-gradient(90deg,#303C54,#3D4B64,#ebedef);
+}
+#tigerLogo{
+    position: absolute;
+    bottom: 1%;
+    left: 1%;
+    width: 150px;
+}
+.txt{
+    position: absolute;
+    top: 10%;
+    left: 15%;
+    color: #ebedef;
+    font-size: 20px;
+}
+.logcon{
+    position: absolute;
+    width: 55%;
+    height: 100%;
+    right: 0;
+    background-color: #ebedef;
+    border-radius: 50px 0 0 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    box-shadow: 1px 1px 30px #333;
+}
+.logcon img{
+    width: 150px;
+    position: absolute;
+    top: 2%;
+    right: 2%;
+}
+.logcon h1{
+    position: absolute;
+    top: 5%;
+    font-size: 30px;
+    color: #303C54;
+}
+.logcon input{
+    width: 70%;
+    outline: none;
+    border: none;
+    text-align: center;
+    background: transparent;
+    padding: 5px;
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 30px;
+    direction: rtl;
+    border-bottom: 2px solid #303C54;
+}
+.logcon input:focus{
+    border-bottom: 3px solid #e55352;
+}
+
+.logcon input::placeholder{
+    font-family: 800;
+    color: #3D4B64;
+}
+.logcon button ,.logout{
+    color: #ebedef;
+    background: linear-gradient(90deg,#303C54,#3D4B64);
+    border: none;
+    text-align: center;
+    text-decoration: none;
+    border-radius: 20px;
+    width: 40%;
+    margin-top: 100px;
+    padding: 10px 0px;
+    font-size: 20px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: 0.5s ease;
+}
+.logcon button:hover ,.logout:hover{
+    background:#303C54;
+}
+.imgbox img{
+    position: absolute;
+    width: 35%;
+    bottom: 0;
+    left: 13%;
+    z-index: 10;   
+    transition: 0.5s ease;
+    animation: loganimate 3s ease-in-out infinite;
+}
+.messages {
+    list-style-type: none;
+    z-index: 10000;
+}
+.success {
+    background-color: #ebedef;
+    color: #303C54;
+    position: fixed;
+    border-left: 5px solid #2ecc71;
+    top: 30px;
+    width: 500px;
+    left: 5%;
+    box-shadow: 1px 1px 15px #3D4B64;
+    padding: 20px 15px 20px 20px;
+    border-radius: 10px;
+    font-size: 20px;
+    animation-name: fadeOut;
+    animation-duration: 1s;
+    animation-fill-mode: forwards;
+    animation-delay: 2s;
+}
+.success::before {
+    content: "✅";
+    margin-left: 10px;
+}
+.warning {
+    background-color: #ebedef;
+    color: #303C54;
+    position: fixed;
+    border-left: 5px solid #b81313;
+    top: 30px;
+    width: 500px;
+    left: 5%;
+    box-shadow: 1px 1px 15px #3D4B64;
+    padding: 20px 15px 20px 20px;
+    border-radius: 10px;
+    font-size: 20px;
+    animation-name: fadeOut;
+    animation-duration: 1s;
+    animation-fill-mode: forwards;
+    animation-delay: 2s;
+}
+.error {
+    background-color: #303C54;
+    color: #303C54;
+    position: fixed;
+    border-left: 5px solid #b81313;
+    top: 30px;
+    width: 500px;
+    left: 5%;
+    box-shadow: 1px 1px 15px #3D4B64;
+    padding: 20px 15px 20px 20px;   
+    border-radius: 10px;
+    font-size: 20px;
+    animation-name: fadeOut;
+    animation-duration: 1s;
+    animation-fill-mode: forwards;
+    animation-delay: 2s;
+}
+
+.warning::before{
+    content: "⚠️";
+    margin-left: 10px;
+}
+
+.error::before {
+    content: "❌";
+    margin-left: 10px;
+} 
+@keyframes fadeOut {
+    0% {
+        transform: scale(0.5);
+        opacity: 0.5;
+    }
+    25%,50% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    75% {
+        transform: scale(0.5);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(0);
+        opacity: 0;
+    }
+}
+@keyframes loganimate {
+    50%{
+        bottom: 5%;
+    }
+}
+@media (max-width:1080px) {
+    .imgbox{display: none;}
+    .txt{display: none;}
+    .backcon{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(90deg,#303C54,#3D4B64);
+    }
+    .logcon{
+        height: 55%;
+        width:90%;
+        border-radius: 20px;
+        position: relative;
+        padding: 30px;
+    }
+    .logcon img{
+        width: 70px;
+    }
+    #tigerLogo{width: 100px;}
+    .logcon h1{
+        font-size: 18px;
+        top: 2%;
+    }
+    .logcon input{
+        width: 80%;
+        margin-bottom: 20px;
+        margin-top: 20px;
+    }
+    .logcon button{
+        width: 90%;
+        margin-top: 50px;
+        padding-top:5px;
+        font-size: 20px;
+    }
+    .success ,.warning ,.error{
+        width: 250px;
+        padding: 10px 5px 10px 10px;
+        border-radius: 10px;
+        font-size: 15px;
+    }
+}

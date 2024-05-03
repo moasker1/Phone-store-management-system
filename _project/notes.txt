@@ -1,0 +1,7 @@
+
+- delete and update
+- reload page submit data problem
+- make admin panel arabic
+- customize admin panel themes
+- start looking for register user form methods 
+- search about local db and online db what is better and faster

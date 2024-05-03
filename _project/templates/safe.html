@@ -1,0 +1,130 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href=" {% static "css/style.css" %} ">
+    <link rel="stylesheet" href=" {% static "css/all.min.css" %} ">
+    <link rel="stylesheet" href=" {% static "css/fontawesome.min.css" %} ">
+    <title>kinds page</title>
+</head>
+<body>
+    <div class="safecon">
+        <a href="{% url "home" %}" class="backbtn"><i class="fa-solid fa-chevron-left"></i></a>
+        <div class="window" id="windowcon">
+            <i id="closedetwin" class="fa-solid fa-xmark close" ></i>
+            <div id="detailcontainer">
+                
+            </div>
+        </div>
+        <h2>الخـــــــزنة</h2>
+        <div class="insert">
+            <h3>ايداع</h3>
+            <form method="POST" style="width: 100%;display: flex;flex-direction: row;justify-content: space-around;">
+                {% csrf_token %}
+                {% if messages %}
+                <ul class="messages">
+                    {% for message in messages %}
+                        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+
+                <div class="wraper">
+                    <div class="second">
+                        <input name='amount'  type="number" id="price" class="search_bar" min="0" required >
+                        <span>المبلغ</span>
+                    </div>
+                </div>
+                <div class="wraper">
+                    <div class="second">
+                        <select name="kind" id=""class="search_bar">
+                            <option value="درج">درج</option>
+                            <option value="محفظة">محفظة</option>
+                        </select>
+                        <span>النوع</span>
+                    </div>
+                </div>
+                <button name="deposit" class="sellbtn">تأكيد</button>
+            </form>
+        </div>
+        <div style="display: flex;justify-content: center;align-items: center;flex-direction: row;height: 100%;width: 100%;gap: 15px;">
+            <div class="leftsafecon">
+                <h4>الدرج</h4>
+                <h2>رصيد الدرج : <span>{{safe.cash}}</span> جنيه <button class="sellsup" id="sellsup" metadata='
+                    <form method="post" action="{% url "safeUpdate" 1 %}" style="width: 100%;display: flex;align-items: center;justify-content: center;flex-direction: column;">
+                        {% csrf_token %}
+                        <h3 style="color:#3D4B64;">تعديل رصيد</h3>
+                        <div class="addsell">
+                            <div class="wraper" style="width: 20%;">
+                                <div class="second">
+                                    <input value="{{safe.cash}}"  min="0" name="cash" type="number" id="search_bar" class="search_bar" required>
+                                    <span>الرصيد</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button name="cashUpdate" class="sellbtn">تعديل</button>
+                    </form>
+                    '><i class="fa-solid fa-pencil"></i></button></h2><br>
+                    <h2>رصيد المدفوعات النقدية خلال الشهر الحالي : <span>{{cash_month}}</span> جنيه 
+                    <h2>رصيد المدفوعات النقدية الكلي : <span>{{safe.cash_paid}}</span> جنيه 
+                    <h2>المجموع : <span>{{safe.cash_total}}</span> جنيه 
+                <button name="addItem" id="sellsup" class="sellbtn" style="width: 50%;" metadata='
+                <form method="post" action="" style="width: 100%;display: flex;align-items: center;justify-content: center;flex-direction: column;">
+                    {% csrf_token %}
+                    <h3 style="color:#3D4B64;">ترحيل الى المحفظة</h3>
+                    <div class="addsell">                  
+                    <div class="wraper" style="width: 20%;">
+                        <div class="second">
+                            <input min="0" name="ctw" type="number" id="search_bar" class="search_bar" required>
+                            <span>المبلغ</span>
+                        </div>
+                    </div>
+                </div>
+                <button name="cashToWallet" class="sellbtn">ترحيل</button>
+            </form>'>ترحيل الى المحفظة</button>
+            </div>
+            <div class="rightsafecon">
+                <h4>المحفظة</h4>
+                <h2>رصيد المحفظة : <span>{{safe.wallet}}</span> جنيه <button class="sellsup" id="sellsup" metadata='
+                    <form method="post" action="{% url "safeUpdate" 1 %}" style="width: 100%;display: flex;align-items: center;justify-content: center;flex-direction: column;">
+                        {% csrf_token %}
+                        <h3 style="color:#3D4B64;">تعديل رصيد</h3>
+                        <div class="addsell">
+                            <div class="wraper" style="width: 20%;">
+                                <div class="second">
+                                    <input value="{{safe.wallet}}"  min="0" name="wallet" type="number" id="search_bar" class="search_bar" required>
+                                    <span>الرصيد</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button name="walletUpdate" class="sellbtn">تعديل</button>
+                    </form>
+                    '><i class="fa-solid fa-pencil"></i></button></h2><br>
+                    <h2>رصيد مدفوعات المحفظة خلال الشهر الحالي : <span>{{wallet_month}}</span> جنيه 
+                    <h2>رصيد مدفوعات المحفظة الكلي : <span>{{safe.wallet_paid}}</span> جنيه 
+                    <h2>المجموع : <span>{{safe.wallet_total}}</span> جنيه 
+                
+                <div style="display: flex;flex-direction: row;width: 100%;justify-content: space-around;align-items: center;">
+                    <button name="" id="sellsup" class="sellbtn" style="width: 50%;" metadata='
+                    <form method="post" action="" style="width: 100%;display: flex;align-items: center;justify-content: center;flex-direction: column;">
+                        {% csrf_token %}
+                        <h3 style="color:#3D4B64;">ترحيل الى الدرج</h3>
+                        <div class="addsell">                  
+                        <div class="wraper" style="width: 20%;">
+                            <div class="second">
+                                <input min="0" name="wtc" type="number" id="search_bar" class="search_bar" required>
+                                <span>المبلغ</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button name="walletToCash" class="sellbtn">ترحيل</button>
+                </form>'>ترحيل الى الدرج</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src=" {% static "js/minhome.js" %} "></script>
+</body>
+</html>
