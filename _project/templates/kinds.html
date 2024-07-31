@@ -10,39 +10,32 @@
     <title>kinds page</title>
 </head>
 <body>
-    <div class="maincon">
-        <a href="{% url "home" %}" class="backbtn"><i class="fa-solid fa-chevron-left"></i></a>
-        <div class="window" id="windowcon">
-            <i id="closedetwin" class="fa-solid fa-xmark close" ></i>
-            <div id="detailcontainer">
-                
-            </div>
+    <div class="window" id="windowcon">
+        <i id="closedetwin" class="fa-solid fa-xmark close" ></i>
+        <div id="detailcontainer">
+            
         </div>
+    </div>
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    <div class="backcon">
+        <a href="{% url "home" %}" class="backbtn"><i class="fa-solid fa-chevron-left"></i></a>
         <div class="leftcon" style="width: 100%;">
-            <div class="status">
-                <h2>اضافة نوع</h2>
-                <form method="post" action="" style="width: 100%;display: flex;align-items: center;justify-content: center;flex-direction: column;">
+            <form method="post" action="" class="othersell">
+                <h3>اضافة نوع</h3>
                     {% csrf_token %}
-                    {% if messages %}
-                    <ul class="messages">
-                        {% for message in messages %}
-                            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-                        {% endfor %}
-                    </ul>
-                    {% endif %}
-                    <div class="addsell">
-                        <div class="wraper">
-                            <div class="first">
-                                <input name='name'  type="text" id="papers" class="search_bar" required >
-                                <span>النوع</span>
-                            </div>
-                        </div>
+                    <div class="addinputs">
+                        <input name='name'  type="text" id="papers" class="search_bar" required placeholder="النوع">
                     </div>
                     <button name="addKind" class="sellbtn">اضافة</button>
-                </form>
-            </div>
+            </form>
             <div class="status">
-                <h2>جميع الانواع</h2>
+                <h3>جميع الانواع</h3>
                 <div style="width: 100%; overflow: scroll; height: fit-content;">
                     {% if kinds %}
                     <table class="sellstable">

@@ -1,22 +1,144 @@
+/*---------------------- main styles --------------------------------*/
 *{
     padding: 0;
     margin: 0;
     box-sizing: border-box;
     font-family: "Alexandria", sans-serif;
-    font-weight: 700;
+    font-weight: 500;
     direction: rtl;
     transition: 0.2s ease-in-out;
 }
+:root{
+    --main-color:#EBFCFF;
+    --sec-color:#00B7EB;
+    --white-color:#FFFFFF;
+    --black-color:#000000;
+    --gray-color:#979797;
+    --sec-gray-color:#F6F6F6;
+    --green-color:#ABF6A9;
+    --yellow-color:#FFE68D;
+    --td-color:#F6F6F6;
+}
 body{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    overflow: hidden;
     width: 100%;
     height: 100vh;
-    overflow: hidden;
-    background: #ebedef;
+    background-color: var(--white-color);
 }
+header{
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    flex-direction: row;
+    width: 100%;
+    height: 8vh;
+    padding: 10px 5px;
+    background: var(--white-color);
+    opacity: 0;
+    animation: showcoontent2 0.3s ease-in-out  0.3s 1 forwards;
+}
+.backcon{
+    position: relative;
+    width: 100%;
+    height: 92vh;
+    background:var(--white-color) ;
+    display: flex;
+    justify-content: start;
+    align-items: start;
+    flex-direction: row;
+    overflow: hidden;
+    opacity: 0;
+    animation: showcoontent 0.3s ease-in-out  0.3s 1 forwards;
+}
+.mainnav{
+    background: transparent;
+    text-decoration: none;
+    padding: 0px;
+    border: none;
+    border-radius: 0;
+}
+.mainnav:hover{background: transparent;}
+header div{
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    color: var(--white-color);
+}
+header img{width: 40px;}
+
+.main{
+    width: 50%;
+}
+.main i{
+    font-size: 20px;
+    color: var(--black-color);
+}
+.main ul{
+    width: 25%;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: start;
+    flex-direction: row;
+    flex-wrap: nowrap;
+}
+.main ul li{
+    background-color: transparent;
+    width: 100%;
+    cursor: pointer;
+    padding: 5px;
+    border-bottom: 2px solid var(--white-color);
+}
+.main ul li:hover,.main ul li.selected{
+    border-bottom:2px solid var(--sec-color);
+}
+.main ul li a{
+    text-decoration: none;
+    width: 100%;
+    color: var(--sec-color);
+    font-size: 20px;
+    font-weight: 400;
+}
+.username{
+    width: 20%;
+    display: flex;
+    justify-content: end;
+    align-items: center;
+    flex-direction: row;
+}
+.username a{
+    text-decoration: none;
+    color: var(--black-color);
+    padding: 10px;
+    font-size: 20px;
+    border-radius: 50%;
+    transition: var(--trans3);
+}
+header h3{
+    font-size: 20px;
+    color: var(--black-color);
+    font-weight: 600;    
+}
+.username a:hover{
+    transform: scale(1.15);
+    color: var(--sec-color);
+}
+::-webkit-scrollbar{
+    width: 10px;
+    background-color: transparent;
+}
+::-webkit-scrollbar-thumb{background-color: var(--sec-color);}
+
+
+/*---------------------- end main styles --------------------------------*/
 .backbtn{
     position: absolute;
     top: 0;
-    left: 0;
+    left: 2%;
     z-index: 5;
     text-decoration: none;
     margin: 10px;
@@ -24,117 +146,20 @@ body{
     height: 40px;
     font-size: 18px;
     border-radius: 50%;
-    color: #ebedef;
-    background: #303C54;
+    color: var(--white-color);
+    background: var(--sec-color);
     text-align: center;
     display: flex;
     justify-content: center;
     align-items: center;
 }
-.zwraper{
-    direction: ltr;
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    z-index: 100;
-    visibility: hidden;
-    opacity: 0;
-    animation: shoe_toast 2s ease forwards;
-}
-@keyframes shoe_toast {
-    0% {
-        opacity: 1;
-        visibility: visible;
-        transform: translateX(-100%);
-    }
-    40%{
-        transform: translateX(10%);
-    }
-    80%,100%{
-        transform: translateX(20px);
-    }
-}
-.zwraper.hide{
-    animation: hide_toast 2s ease forwards;
-}
-@keyframes hide_toast {
-    0%{
-        visibility: visible;
-        transform: translateX(20px)
-    }
-    40%{
-        transform: translateX(10%);
-    }
-    80%,100%{
-        visibility: hidden;
-        opacity: 0;
-        pointer-events: none;
-        transform: translateX(-100%);
-    }
-}
-.zwraper .toast{
-    direction: ltr;
-    background: #FFFFFF;
-    padding: 20px 15px 20px 20px;
-    border-radius: 10px;
-    border-left: 5px solid #2ecc71;
-    box-shadow: 1px 7px 14px -5px rgba(0,0,0,0.15);
-    width: 500px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-.zwraper .toast.offline{
-    border-color: #ccc;
-}
-.toast .content{
-    direction: ltr;
-    display: flex;
-    align-items: center;
-}
-.content .icon{
-    font-size: 25px;
-    color: #FFFFFF;
-    height: 50px;
-    width: 50px;
-    text-align: center;
-    line-height: 50px;
-    border-radius: 50%;
-    background: #2ecc71;
-}
-.toast.offline .content .icon{
-    background: #ccc;
-}
-.content .details{
-    margin-left: 15px;
-}
-.details span{
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: end;
-    font-size: 20px;
-    font-weight: 500;
-}
-.details p{
-    direction: ltr;
-    color: #878787;
-}
-::-webkit-scrollbar {
-    width: 10px; 
-    background-color: #ebedef; 
-}
-::-webkit-scrollbar-thumb {
-    background-color: #303C54; 
-    border-radius: 10px; 
-}
+/*---------------------------- popup window -----------------------------------*/
 #windowcon{
     position: fixed;
     width: 100%;
     height: 100vh;
     z-index: 1009;
-    background-color: #303c545e;
-    padding: 10px;
+    background-color: rgba(128, 128, 128, 0.362);
     visibility: hidden;
     display: flex;
     justify-content: center;
@@ -146,7 +171,7 @@ body{
 #windowcon .close{
     position: absolute;
     top: 10%;
-    left: 10%;
+    left: 5%;
     font-size: 30px;
     width: 40px;
     height: 40px;
@@ -163,13 +188,13 @@ body{
 }
 #detailcontainer{
         position: fixed;
-        top: 25%;
+        top: 15%;
         right: 10%;
         width: 80%;
         min-height: 30vh;
         height: fit-content;
         z-index: 1009;
-        background-color: #fff;
+        background-color: var(--white-color);
         border-radius: 20px;
         padding: 10px;
         display: flex;
@@ -178,16 +203,8 @@ body{
         flex-direction: column;
         direction: rtl;
 }
-.maincon{    
-    height: 100vh;
-    width: 100%;
-    position: relative;
-    overflow-x: hidden;
-    display: flex;
-    justify-content: start;
-    align-items: start;
-    flex-direction: row;
-}
+/*---------------------------- end popup window -----------------------------------*/
+
 .safecon{
     height: 100vh;
     width: 100%;
@@ -204,7 +221,7 @@ body{
 }
 .safecon .leftsafecon,.safecon .rightsafecon{
     width: 45%;
-    min-height: 50%;
+    min-height: 70%;
     background-color: #fff;
     box-shadow: 1px 1px 15px #303C54;
     border-radius:30px;
@@ -226,48 +243,22 @@ body{
     gap: 15px;
     padding: 20px;
 }
-.leftcon{
-    width: 95%;
-    height: 100vh;
-    background-color: #ebedef;
-    overflow-y: scroll;
-}
+/*------------------------ menubar styles --------------------------------*/
 .rightcon{
     width: 5%;
     height: 100vh;
     overflow: hidden;
     position: relative;
-    background: #3D4B64;
-    box-shadow: 1px 1px 15px #303C54;
-    border-radius: 30px 0 0 30px;
+    background: var(--black-color);
 }
 .rightcon.active{width: 15%;}
 .rightcon.active ~ .leftcon{width: 85%;}
-.rightcon .minhead{
-    background: #303C54;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 0 0 30px 0;
-}
-.rightcon .minhead h3{
-    text-align: center;
-    color: #FFFFFF;
-    font-size: 13px;
-    width: 80%;
-    padding: 10px;
-}
-.rightcon.active .minhead h3{
-    width: 80%;
-    font-size: 22px;
-    padding: 5px;
-}
+
 #rightconexpend{
-    color: #3D4B64;
-    background: #ebedef;
+    color: var(--black-color);
     width: 40px;
-    height: 40px;
-    border-radius: 50%;
+    height: 100%;
+    /* border-radius: 50%; */
     font-size: 30px;
     display: flex;
     justify-content: center;
@@ -277,41 +268,14 @@ body{
 }
 #rightconexpend:hover{
     transform: scale(0.95);
-    color: #e55352;
+    color: var(--sec-color);
 }
 .rightcon.active #rightconexpend{
     transform: rotate(180deg);
 }
-.rightcon .minfoot{
-    width: 100%;
-    background: #303C54;
-    position: absolute;
-    bottom: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 0 30px 0 0;
-}
-.rightcon .minfoot a{
-    margin: 5px 0;
-    text-decoration: none;
-    font-size: 25px;
-    color: #ebedef;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.rightcon .minfoot a:hover{
-    background: #ebedef;
-    color: #303C54;
-}
 .rightcon ul{
     width: 100%;
     list-style: none;
-    margin-top: 100px;
 }
 .rightcon ul li{
     width: 100%;
@@ -321,13 +285,13 @@ body{
     gap: 10px;
 }
 .rightcon span{
-    color: #ebedef;
+    color: var(--sec-color);
     margin-right: 20px;
     font-size: 15px;
     display: none;
 }
 .rightcon ul li span{
-    color: #ebedef;
+    color: var(--sec-color);
     width: 80%;
     font-size: 15px;
     display: none;
@@ -342,13 +306,32 @@ body{
     padding: 0 5px;
     position: relative;
     text-decoration: none;
-    color: #ebedef;
+    color: var(--sec-color);
+}
+.rightcon ul li:hover span{
+    color: var(--white-color);
 }
 .rightcon ul li:hover{
-    background: #303C54;
+    background: var(--sec-color);
+    color: var(--white-color);
 }
 .activeli{
-    background: #303C54;
+    background: var(--sec-color);
+    color: var(--white-color);
+}
+.activeli span{color: var(--white-color);}
+/*------------------------ end menubar styles --------------------------------*/
+/*------------------------ main div styles --------------------------------*/
+.leftcon{
+    width: 95%;
+    height: 100%;
+    background-color: var(--white-color);
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    justify-content: start;
+    align-items: center;
+    flex-direction: column;
 }
 .leftcon .status{
     border-radius: 10px;
@@ -360,13 +343,15 @@ body{
     justify-content: center;
     align-items: center;
     flex-direction: column;
+    width: 100%;
 }
 .leftcon .status h2{
-    font-size: 18px;
-    color: #303C54;
+    font-size: 20px;
+    color: var(--black-color);
+    font-weight: 400;
 }
 .leftcon .status .statuscon{
-    width: 90%;
+    width: 100%;
     margin: 20px;
     display: flex;
     justify-content: space-around;
@@ -375,65 +360,112 @@ body{
     flex-direction: row;
     flex-wrap: wrap;
 }
-.leftcon .status .statuscon div{
+.leftcon .status .statuscon .statusimg{
+    width: 35%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+.leftcon .status .statuscon .statusimg .sellbtn{width: 70%;}
+.leftcon .status .statuscon .statuscards{
+    width: 60%;
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+.statuscards div{
     user-select: none;
     cursor: pointer;
-    width: 25%;
-    height: 100px;
+    width: 40%;
+    height: 50px;
+    margin: 1%;
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 10px;
-    flex-direction: column;
-    background: #ebedef;
+    flex-direction: row;
+    background: var(--sec-gray-color);
     border-radius: 10px;
-    box-shadow: 1px 1px 10px #3D4B64;
+    border-right: 5px solid var(--sec-color);
+    box-shadow: 1px 1px 10px var(--sec-gray-color);
 }
-.leftcon .status .statuscon div:hover{
-    transform: scale(1.1);
+.statuscards div:hover{
+    transform: scale(1.015);
 }
-.leftcon .status .statuscon div h2{
-    color: #3D4B64;
+.statuscards div h2{
+    color: var(--black-color);
     font-size: 20px;
     font-weight: 400;
 }
-.leftcon .status .statuscon div h3{
+.statuscards div h3{
+    color: var(--black-color);
     font-size: 18px;
     font-weight: 500;
-}
-.leftcon .status .statuscon div:nth-child(1){
-    border-right: 20px solid #3399ff;
-    color: #3399ff;
-}
-.leftcon .status .statuscon div:nth-child(2){
-    border-right: 20px solid #e55352;
-    color: #e55352;
-}
-.leftcon .status .statuscon div:nth-child(3){
-    border-right: 20px solid #321fdc;
-    color: #321fdc;
-}
-.leftcon .status .statuscon div:nth-child(4){
-    border-right: 20px solid #1fdc77;
-    color: #1fdc77;
-}
-.leftcon .status .statuscon div:nth-child(5){
-    border-right: 20px solid #3D4B64;
-    color: #3D4B64;
-}
-.leftcon .status .statuscon div:nth-child(6){
-    border-right: 20px solid #3D4B64;
-    color: #3D4B64;
 }
 .addsell{
     width: 100%;
     margin: 20px;
     display: flex;
-    justify-content: center;
+    justify-content: start;
     align-items: center;
     flex-direction: row;
     gap: 15px;
 }
+/*------------------------ end main div styles --------------------------------*/
+/*------------------------ add othersells styles --------------------------------*/
+.othersell{
+    width: 80%;
+    background-color: var(--sec-gray-color);
+    min-height: 35vh;
+    max-height: fit-content;
+    border-radius: 10px;
+    margin: 1% 0;
+    display: flex;
+    align-items: center;
+    justify-content: start;
+    flex-direction: column;
+}
+.addinputs{
+    width: 95%;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+.addinputs input,.addinputs select{
+    width: 40%;
+    margin: 1% 0;
+    height: 50px;
+    border: none;
+    outline: none;
+    background: transparent;
+    border-bottom: 1px solid var(--gray-color);
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--gray-color);
+}
+.othersell button{
+    width: 20%;
+    border-radius: 10px;
+    border: none;
+    outline: none;
+    height: 40px;
+    font-size: 18px;
+    font-weight: 400;
+    background-color: var(--sec-color);
+    color: var(--white-color);
+    margin: 1% 0;
+    cursor: pointer;
+    transition: 0.4s ease;
+}
+.othersell button:hover{
+    background-color: var(--main-color);
+    color: var(--black-color);
+}
+/*------------------------ end add othersells styles --------------------------------*/
 .wraper{
     width: 30%;
     height: fit-content;
@@ -446,7 +478,7 @@ body{
     flex-direction: column;
     text-align: center;
     z-index: 10;
-    border: 2px solid #303C54;
+    border: 2px solid var(--gray-color);
 }
 .wraper .first, .wraper .second{
     width: 100%;
@@ -465,7 +497,7 @@ body{
     width:fit-content;
     padding: 0 15px;
     z-index: 11;
-    color: #303C54;
+    color: var(--gray-color);
 }
 .wraper input:valid ~ span,
 .wraper input:focus ~ span{
@@ -488,7 +520,7 @@ body{
     padding:0 5px;
     z-index: 11;
     width:fit-content;
-    color: #303C54;
+    color: var(--gray-color);
 }
 .wraper .second input ~ span,
 .wraper .second input:focus ~ span{
@@ -510,7 +542,7 @@ body{
 .select{
     font-size: 18px;
     font-weight: 500;
-    color: #303C54;
+    color: var(--sec-color);
     padding: 10px;
 }
 .wraper table{
@@ -529,8 +561,8 @@ body{
     width: 100%;
 }
 .wraper table tr:hover{
-    background-color: #3D4B64;
-    color: #fff;
+    background-color:  var(--sec-color);
+    color: var(--white-color);
 }
 .wraper .search_res{
     display: none;
@@ -545,7 +577,7 @@ body{
     padding: 10px 0;
     border: none;
     border-radius: 15px;
-    background-color: #303C54;
+    background-color: var(--sec-color);
     color: #ebedef;
     font-size: 18px;
     cursor: pointer;
@@ -558,24 +590,28 @@ body{
 .leftcon .sellstable,#detailcontainer table{
     width: 100%;
     margin: 20px 0;
-    border-bottom: 1px solid #303C54;
+    border-bottom: 1px solid var(--gray-color);
+    border-collapse: collapse;
+    border-radius: 10px;
+    overflow: hidden;
 }
 .leftcon .sellstable thead,#detailcontainer table thead{
-    background: #303C54;
-    color: #ebedef;
+    background: var(--gray-color);
+    color: var(--white-color);
+
 }
 .leftcon .sellstable th,#detailcontainer table th{
-    padding: 10px 5px;
-    border-radius: 10px;
+    padding: 15px 5px;
     font-weight:500;
 }
 .leftcon .sellstable td,#detailcontainer table td{
     text-align: center;
     padding: 10px 5px;
 }
-.leftcon .sellstable tbody tr:hover,#detailcontainer table tr:hover{
-    background:#ebedef;
-    cursor: pointer;
+.leftcon .sellstable tbody tr{background-color: var(--td-color);border-bottom: 5px solid var(--white-color);}
+.leftcon .sellstable tbody tr.back{
+    background-color: red;
+    color: #FFFFFF;
 }
 .leftcon .sellsdel{
     background: transparent;
@@ -622,44 +658,45 @@ body{
     height: 40px;
     font-size: 18px;
     border-radius: 50%;
-    color: #ebedef;
-    background: #303C54;
+    color: var(--white-color);
+    background: var(--sec-color);
     text-align: center;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 .sellprod{
-    color: #ebedef;
+    color: var(--white-color);
     font-size: 18px;
-    background: #303C54;
+    background: var(--sec-color);
     cursor: pointer;
     outline: none;
     border: none;
     padding: 5px 0;
     width: 70%;
-    margin: 0;
     display: block;
-    border-radius: 30px;
+    border-radius: 10px;
 }
 .leftcon .btnnav a:hover,.sellprod:hover,.backbtn:hover{
     transform: scale(0.99);
     box-shadow: 1px 1px 10px #303C54;
     opacity: 0.9;
 }
+
+/*----------------------- messages styles ---------------------------------*/
 .messages {
     list-style-type: none;
-    z-index: 10000;
+    z-index: 9999999999;
 }
 .success {
-    background-color: #ebedef;
-    color: #303C54;
+    background-color: var(--white-color);
+    z-index: 9999999999;
+    color: var(--sec-color);
     position: fixed;
-    border-left: 5px solid #2ecc71;
+    border-left: 5px solid var(--green-color);
     top: 30px;
     width: 500px;
     left: 5%;
-    box-shadow: 1px 1px 15px #3D4B64;
     padding: 20px 15px 20px 20px;
     border-radius: 10px;
     font-size: 20px;
@@ -667,21 +704,21 @@ body{
     animation-duration: 1s;
     animation-fill-mode: forwards;
     animation-delay: 2s;
-    z-index: 10010;
 }
 .success::before {
     content: "✅";
     margin-left: 10px;
 }
 .warning {
-    background-color: #ebedef;
-    color: #303C54;
+    z-index: 9999999999;
+    background-color: var(--white-color);
+    color: var(--sec-color);
     position: fixed;
     border-left: 5px solid #b81313;
     top: 30px;
     width: 500px;
     left: 5%;
-    box-shadow: 1px 1px 15px #3D4B64;
+    box-shadow: 1px 1px 15px var(--gray-color);
     padding: 20px 15px 20px 20px;
     border-radius: 10px;
     font-size: 20px;
@@ -689,18 +726,17 @@ body{
     animation-duration: 1s;
     animation-fill-mode: forwards;
     animation-delay: 2s;
-    z-index: 10010;
-
 }
 .error {
-    background-color: #ebedef;
-    color: #303C54;
+    z-index: 9999999999;
+    background-color: var(--white-color);
+    color: var(--sec-color);
     position: fixed;
     border-left: 5px solid #b81313;
     top: 30px;
     width: 500px;
     left: 5%;
-    box-shadow: 1px 1px 15px #3D4B64;
+    box-shadow: 1px 1px 15px var(--gray-color);
     padding: 20px 15px 20px 20px;   
     border-radius: 10px;
     font-size: 20px;
@@ -708,8 +744,6 @@ body{
     animation-duration: 1s;
     animation-fill-mode: forwards;
     animation-delay: 2s;
-    z-index: 10010;
-
 }
 
 .warning::before{
@@ -739,6 +773,8 @@ body{
         opacity: 0;
     }
 }
+/*----------------------- end messages styles ---------------------------------*/
+
 .print{
     color: #fff;
     background-color: #00C2F4;
@@ -822,40 +858,6 @@ body{
 #printcontent .detcon table tr td{border: none; border-bottom: 1px solid #625D5D;}
 .detcon table{
     text-align: right;
-}
-.window{
-    position: fixed;
-    right: 5%;
-    top: 5%;
-    width: 90%;
-    height: 90vh;
-    z-index: 101;
-    background-color: #fff;
-    border-radius: 20px;
-    padding: 10px;
-    box-shadow: 1px 1px 1000px #625D5D;
-    display: none;
-    justify-content: start;
-    align-items: center;
-    flex-direction: column;
-    direction: rtl;
-}
-.window .close{
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    font-size: 30px;
-    cursor: pointer;
-    color: #625D5D;
-    padding: 5px;
-    border-radius: 50%;
-    transition: 0.5s ease;
-}
-.window .close:hover{
-    color: #c10000;
-}
-.window h2{
-    margin: 30px;
 }
 .addcar button,.window #sellbtn{
     text-align: center;
@@ -999,8 +1001,122 @@ body{
 .window img{
     width: 100px;
 }
+.totdiv{
+    width: 15%;
+    height: 35vh;
+    padding: 50px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    background-color: var(--sec-gray-color);
+    border-radius: 10px;
+}
+.totdiv h2{padding: 10px;font-size: 15px;width: 100%;text-align: center;}
+
+/*---------------------- keyframes ----------------------------------*/
+@keyframes fadeOut {
+    0% {
+        transform: scale(0.5);
+        opacity: 0.5;
+    }
+    25%,50% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    75% {
+        transform: scale(0.5);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(0);
+        opacity: 0;
+    }
+}
+@keyframes showcoontent {
+    from{
+        opacity: 0;
+        transform: translate(0,100px);
+        filter: blur(30px);
+    }to{
+        opacity: 1;
+        transform: translate(0,0);
+        filter: blur(0px);
+    }
+}
+@keyframes showcoontent2 {
+    from{
+        opacity: 0;
+        transform: translate(0,-100px);
+        filter: blur(30px);
+    }to{
+        opacity: 1;
+        transform: translate(0,0);
+        filter: blur(0px);
+    }
+}
+@keyframes showcoontent3 {
+    from{
+        opacity: 0;
+        transform: translate(-100px,0);
+        filter: blur(30px);
+    }to{
+        opacity: 1;
+        transform: translate(0,0);
+        filter: blur(0px);
+    }
+}
+@keyframes showcoontent4 {
+    from{
+        opacity: 0;
+        transform: translate(100px,0);
+        filter: blur(30px);
+    }to{
+        opacity: 1;
+        transform: translate(0,0);
+        filter: blur(0px);
+    }
+}
+
+
 @media (max-width:1080px) {
     .zwraper .toast{
         width: 250px;
+    }
+    .rightcon{width: 0;}
+    .leftcon{width: 100%;}
+    .rightcon.active{
+        position: fixed;
+        bottom: 0;
+        right: 0;
+        z-index: 10000;
+        width: 60%;
+        height: 92vh;
+    }
+    .rightcon.active ~ .leftcon{width: 100%;}
+    .main ul{
+        width: 60%;
+    }
+    .main ul li a{
+        text-decoration: none;
+        width: 100%;
+        color: var(--sec-color);
+        font-size: 20px;
+        font-weight: 400;
+    }
+    .addsell .wraper{
+        width: 60%;
+    }
+    .leftcon .status .statuscon .statusimg{width: 100%;}
+    .leftcon .status .statuscon .statuscards{width: 100%;}
+    .daytxt{display: none;}
+    .statuscards div{width: 45%;flex-direction: column;height: 100px;}
+    .statuscards div h3{
+        font-size: 18px;
+        font-weight: 300;
+    }
+    .othersell button{
+        width: 40%;
+        margin: 5% 0;
     }
 }

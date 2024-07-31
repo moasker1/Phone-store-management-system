@@ -10,6 +10,14 @@
     <title>kinds page</title>
 </head>
 <body>
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
     <div class="safecon">
         <a href="{% url "home" %}" class="backbtn"><i class="fa-solid fa-chevron-left"></i></a>
         <div class="window" id="windowcon">
@@ -23,13 +31,6 @@
             <h3>ايداع</h3>
             <form method="POST" style="width: 100%;display: flex;flex-direction: row;justify-content: space-around;">
                 {% csrf_token %}
-                {% if messages %}
-                <ul class="messages">
-                    {% for message in messages %}
-                        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-                    {% endfor %}
-                </ul>
-                {% endif %}
 
                 <div class="wraper">
                     <div class="second">
@@ -67,9 +68,9 @@
                         <button name="cashUpdate" class="sellbtn">تعديل</button>
                     </form>
                     '><i class="fa-solid fa-pencil"></i></button></h2><br>
-                    <h2>رصيد المدفوعات النقدية خلال الشهر الحالي : <span>{{cash_month}}</span> جنيه 
-                    <h2>رصيد المدفوعات النقدية الكلي : <span>{{safe.cash_paid}}</span> جنيه 
-                    <h2>المجموع : <span>{{safe.cash_total}}</span> جنيه 
+                <h4>رصيد المدفوعات النقدية خلال الشهر الحالي : <span>{{cash_month}}</span> جنيه </h4>
+                <h4>رصيد المدفوعات النقدية الكلي : <span>{{safe.cash_paid}}</span> جنيه </h4>
+                <h4>المجموع : <span>{{safe.cash_total}}</span> جنيه </h4>
                 <button name="addItem" id="sellsup" class="sellbtn" style="width: 50%;" metadata='
                 <form method="post" action="" style="width: 100%;display: flex;align-items: center;justify-content: center;flex-direction: column;">
                     {% csrf_token %}
@@ -83,7 +84,7 @@
                     </div>
                 </div>
                 <button name="cashToWallet" class="sellbtn">ترحيل</button>
-            </form>'>ترحيل الى المحفظة</button>
+                </form>'>ترحيل الى المحفظة</button>
             </div>
             <div class="rightsafecon">
                 <h4>المحفظة</h4>
@@ -102,9 +103,9 @@
                         <button name="walletUpdate" class="sellbtn">تعديل</button>
                     </form>
                     '><i class="fa-solid fa-pencil"></i></button></h2><br>
-                    <h2>رصيد مدفوعات المحفظة خلال الشهر الحالي : <span>{{wallet_month}}</span> جنيه 
-                    <h2>رصيد مدفوعات المحفظة الكلي : <span>{{safe.wallet_paid}}</span> جنيه 
-                    <h2>المجموع : <span>{{safe.wallet_total}}</span> جنيه 
+                    <h4>رصيد مدفوعات المحفظة خلال الشهر الحالي : <span>{{wallet_month}}</span> جنيه </h4>
+                    <h4>رصيد مدفوعات المحفظة الكلي : <span>{{safe.wallet_paid}}</span> جنيه </h4>
+                    <h4>المجموع : <span>{{safe.wallet_total}}</span> جنيه </h4>
                 
                 <div style="display: flex;flex-direction: row;width: 100%;justify-content: space-around;align-items: center;">
                     <button name="" id="sellsup" class="sellbtn" style="width: 50%;" metadata='

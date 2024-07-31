@@ -11,25 +11,24 @@
 </head>
 <body>
     <div class="backcon">
-    <img src=" {% static "images/santalogo.png" %} " id="tigerLogo">  
-    <div class="txt">
-        <h1>مرحبــــــــــــا بكم</h1>
-    </div>
-    <form method="POST" style="width: 100%;height: 100vh; display: flex;align-items: center;justify-content: center;">
+        <img src=" {% static "images/log1.png" %} " id="image1">
+        <img src=" {% static "images/log2.png" %} " id="image2">
+        <img src=" {% static "images/log3.png" %} " id="image3">
+        <img src=" {% static "images/log4.png" %} " id="image4">
+        <img src=" {% static "images/santalogo.png" %} " id="tigerLogo">
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    <form method="POST" class="logcon">
         {% csrf_token %}
-        {% if messages %}
-        <ul class="messages">
-            {% for message in messages %}
-                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-            {% endfor %}
-        </ul>
-        {% endif %}
-            <div class="logcon">
-            <h1>تسجيل الدخول</h1>
-            <input value = "santa" type="hidden" name = 'username' id ='password' placeholder="كلمة المرور">
-            <input type="password" name = 'password' id ='password' placeholder="كلمة المرور">
-            <button type= 'submit'>تسجيل الدخول</button>
-        </div>
+        <h1>مرحبــــــــا بكم</h1>
+        <input value = "santa" type="hidden" name = 'username' id ='password' placeholder="كلمة المرور">
+        <input type="password" name = 'password' id ='password' placeholder="كلمة المرور">
+        <button type= 'submit'>تسجيل الدخول</button>
     </form>
 </div>
 <script>

@@ -30,7 +30,21 @@ def logout_user(request):
 #====================================================================================================================
 @login_required(login_url="login")
 def home(request) :
-    return render(request, "home.html")
+    clients_number = Client.objects.count()
+    items_number = Item.objects.count()
+    suppliers_number = Supplier.objects.count
+    all_items = Item.objects.all().order_by("-date")
+    shorts = [item for item in all_items if item.quantity == 0 ]
+    shorts_number = 0
+    for short in shorts :
+        shorts_number += 1
+    context = {
+        "clients_number" : clients_number,
+        "items_number" : items_number,
+        "suppliers_number" : suppliers_number,
+        "shorts_number" : shorts_number,
+    }
+    return render(request, "home.html" , context)
 #====================================================================================================================
 def kinds(request):
     kinds = Kind.objects.all()
@@ -634,6 +648,7 @@ def daycome(request):
     if "dayCome" in request.POST:
         total_profits = request.POST.get('total_profits')
         total_loses = request.POST.get('total_loses')
+        total_payments = request.POST.get('payments')
         date_str = request.POST.get('date')
         net_profit = request.POST.get('net_profit')
         win = request.POST.get('win')
@@ -644,7 +659,7 @@ def daycome(request):
             messages.warning(request, f'تقفيل هذا اليوم محفوظ بالفعل في قاعدة البيانات')
             return redirect('daycome')
 
-        Daycome.objects.create(loses=total_loses, income=total_profits, date=date_str, net_profit=net_profit, win = win , cash=cash, wallet=wallet)
+        Daycome.objects.create(loses=total_loses, income=total_profits, date=date_str, net_profit=net_profit, win = win , cash=cash, wallet=wallet, payments = total_payments)
         messages.success(request, "تم حفظ تقفيل اليوم")
         return redirect("daycome")
 
@@ -787,10 +802,13 @@ def suppliers(request):
         messages.success(request,"تم اضافة مورد بنجاح")
         return redirect("suppliers")
     
+        
+    
     if 'search' in request.POST :
         search_input = request.POST.get('searchInput')
         results = [result['id'] for result in Supplier.objects.all().filter(Q(name__icontains=search_input)).values()]
         supplier_list = [Supplier.objects.get(pk = id) for id in results]
+
 
     context ={'suppliers': supplier_list}
 
@@ -819,6 +837,19 @@ def supplier_update(request, id):
 
         messages.success(request, 'تم تعديل بيانات المورد بنجاح', extra_tags='success')
         return redirect("suppliers")
+
+#====================================================================================================================
+def supplier_pay(request, id):
+    supplier_to_pay = get_object_or_404(Supplier, id =id )
+    if "supplierPaid" in request.POST:
+        paid = request.POST.get("paid")
+        paid = Decimal(paid)
+        supplier_to_pay.for_him -= paid
+        supplier_to_pay.save()
+
+        messages.success(request, 'تم السداد للمورد بنجاح', extra_tags='success')
+        return redirect("suppliers")
+
 #====================================================================================================================
 def supplier_delete(request, id):
     supplier_to_delete = get_object_or_404(Supplier, id =id )
@@ -828,3 +859,5 @@ def supplier_delete(request, id):
         messages.success(request, "تم حذف العميل بنجاح")
         return redirect("suppliers")
 #====================================================================================================================
+def supplier_page (request, id):
+        pass

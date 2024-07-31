@@ -42,6 +42,7 @@ class Daycome(models.Model):
     date = models.DateTimeField(blank=True, null=True)
     income = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     loses = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    payments = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     net_profit = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     win = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     cash = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)

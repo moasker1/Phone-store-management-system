@@ -10,20 +10,40 @@
     <title>addprods page</title>
 </head>
 <body>
-    <div class="maincon">
-        <div class="window" id="windowcon">
-            <i id="closedetwin" class="fa-solid fa-xmark close" ></i>
-            <div id="detailcontainer">
-                
-            </div>
-        </div>
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
 
-        <div class="rightcon">
+    <header>
+        <div class="main">
             <div class="minhead">
-                <h3>friends</h3>
+                <i class="fa-solid fa-bars" id="rightconexpend"></i>
             </div>
             <ul>
-                <i class="fa-solid fa-arrow-left" id="rightconexpend"></i>
+                <li class="selected"><a href="{% url "items" %}">صفحة البضاعة</a></li>
+            </ul>
+        </div>
+        <div class="username">
+                <a href="{% url "logout" %}"><i class="fa-solid fa-power-off"></i></a>
+                <h3>{{user.username}}<h3>
+        </div>
+    </header>
+    <div class="window" id="windowcon">
+        <i id="closedetwin" class="fa-solid fa-xmark close" ></i>
+        <div id="detailcontainer">
+            
+        </div>
+    </div>
+    <div class="backcon">
+        <div class="rightcon">
+            <div class="minhead">
+                <i class="fa-solid fa-bars" id="rightconexpend"></i>
+            </div>
+            <ul>
                 <a href="{% url "home" %}">
                     <li>
                         <i class="fa-solid fa-house-circle-check"></i>
@@ -54,67 +74,48 @@
                         <span>اضافة بضاعة</span>
                     </li>
                 </a>
-            </ul>
-            <div class="minfoot">
-                <a href="{% url "logout" %}">
-                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                <a href="{% url "profits" %}">
+                    <li>
+                        <i class="fa-solid fa-table-cells"></i>
+                        <span>المبيعات</span>
+                    </li>
                 </a>
-                <span></span>
-            </div>
+                <a href="{% url "shorts" %}">
+                    <li>
+                        <i class="fa-solid fa-arrow-down-short-wide"></i>
+                        <span>النواقص</span>
+                    </li>
+                </a>
+                <a href="{% url "daycome" %}">
+                    <li>
+                        <i class="fa-brands fa-airbnb"></i>
+                        <span>صفحة الادمن</span>
+                    </li>
+                </a>
+            </ul>
         </div>
-
-
         <div class="leftcon">
-            <div class="status">
-                <h2>اضافة بضاعة جديدة</h2>
-                <form method="post" action="" style="width: 100%;display: flex;align-items: center;justify-content: center;flex-direction: column;">
+            <div style="width: 100%;display: flex;align-items: center;justify-content: space-around;flex-direction: row;">
+                <form method="post" action="" class="othersell">
                     {% csrf_token %}
-                    {% if messages %}
-                    <ul class="messages">
-                        {% for message in messages %}
-                            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-                        {% endfor %}
-                    </ul>
-                    {% endif %}
-
-                    <div class="addsell" style="padding-top: 70px;">
-                        <div class="wraper" style="    position: absolute;  left: 35%; top: 20%;z-index: 15;">
-                            <div class="first">
-                                <input name='name' type="text" id="search_bar" class="search_bar" required >
-                                <span>اسم البضاعة</span>
-                            </div>
-                        </div>
-                        <div class="wraper">
-                            <div class="first">
-                                <select name="kind" class="search_bar" id="">
-                                    {% for kind in kinds %}
-                                    <option value="{{kind.name}}">{{kind.name}}</option>
-                                    {% endfor %}
-                                </select>
-                                <span>النوع</span>
-                            </div>
-                        </div>
-                        <div class="wraper" >
-                            <div class="second">
-                                <input name='prand'  type="text" id="papers" class="search_bar"  required >
-                                <span>الماركة</span>
-                            </div>
-                        </div>
-                        <div class="wraper" >
-                            <div class="second">
-                                <input name='quantity'  type="number" id="papers" class="search_bar" min="0" required >
-                                <span>الكمية</span>
-                            </div>
-                        </div>
-                        <div class="wraper">
-                            <div class="second">
-                                <input name='price' step="0.01"  type="number" id="price" class="search_bar" min="0" required >
-                                <span>السعر</span>
-                            </div>
-                        </div>
+                    <div class="addinputs">
+                        <input name='name' type="text" id="search_bar" class="search_bar" required placeholder="اسم البضاعة">
+                        <select name="kind" class="search_bar" id="">
+                            {% for kind in kinds %}
+                            <option value="{{kind.name}}">{{kind.name}}</option>
+                            {% endfor %}
+                        </select>
+                        <input name='prand'  type="text" id="papers" class="search_bar" placeholder="الماركة" required >
+                        <input name='quantity'  type="number" id="papers" class="search_bar" min="0" required placeholder="الكمية">
+                        <input name='price' step="0.01"  type="number" id="price" class="search_bar" min="0" required placeholder="السعر">
+                        <input name='supname' step="0.01"  type="text" id="price" class="search_bar" min="0" required placeholder="اسم المورد">
                     </div>
                     <button name="addItem" class="sellbtn">تأكيد</button>
                 </form>
+                <div class="totdiv">
+                    <img src="{% static "images/items.png" %}" style="width:100%;">
+                    <h2 id="totnum">اجمالى مبلغ البضاعة <span style="color: rgb(27, 173, 27);font-size: 18px;font-weight: 300;">{{item_value_total}}</span> جنيه</h2>
+                </div>    
             </div>
             <div class="status">
                 <h2>جميع البضاعه</h2>
@@ -124,14 +125,7 @@
                         <div class="wraper">
                             <div class="first">
                                 <input  name="searchInput" value="{{request.POST.searchInput}}" type="text" id="search_bar" class="search_bar" required >
-                                <span>بحث باسم المنتج</span>
-                            </div>
-                            <div class="search_res" id="search_res">
-                                <table id="suplliersull">
-                                    <th></th>
-                                    <tbody id="suplliersul">
-                                    </tbody>
-                                </table>
+                                <span>بحث</span>
                             </div>
                         </div>
                         <button name="search" class="sellbtn" style="width: 40px;"><i class="fa-solid fa-magnifying-glass"></i></button>
@@ -249,15 +243,16 @@
         
                             </div>
                         </div>
-        
                         {% else %}
                         <h2 style="width: 100%;text-align: center;color: #303C54;margin-bottom: 20px;">لا يوجد بضاعة</h2>
                         {% endif %}
-                    </div>
+                </div>
             </div>
         </div>
     </div>
     <script src=" {% static "js/select.js" %} "></script>
     <script src=" {% static "js/home.js" %} "></script>
+    <script>
+    </script>
 </body>
 </html>

@@ -10,42 +10,33 @@
     <title>kinds page</title>
 </head>
 <body>
-    <div class="maincon">
-        <a href="{% url "home" %}" class="backbtn"><i class="fa-solid fa-chevron-left"></i></a>
-        <div class="window" id="windowcon">
-            <i id="closedetwin" class="fa-solid fa-xmark close" ></i>
-            <div id="detailcontainer">
-                
-            </div>
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    <div class="window" id="windowcon">
+        <i id="closedetwin" class="fa-solid fa-xmark close" ></i>
+        <div id="detailcontainer">
+            
         </div>
+    </div>
+    <div class="backcon">
+        <a href="{% url "home" %}" class="backbtn"><i class="fa-solid fa-chevron-left"></i></a>
         <div class="leftcon" style="width: 100%;">
-            <div class="status">
-                <h2>اضافة عملاء</h2>
-                <form method="post" action="" style="width: 100%;display: flex;align-items: center;justify-content: center;flex-direction: column;">
-                    {% csrf_token %}
-                    <div class="addsell">
-                        <div class="wraper">
-                            <div class="first">
-                                <input  name="name" type="text" id="search_bar" class="search_bar" required >
-                                <span>اسم العميل</span>
-                            </div>
-                        </div>
-                        <div class="wraper">
-                            <div class="first">
-                                <input  name="phone" type="number" id="search_bar" class="search_bar">
-                                <span>رقم التليفون</span>
-                            </div>
-                        </div>
-                        <div class="wraper">
-                            <div class="first">
-                                <input  name="opening_balance"  type="number" id="search_bar" class="search_bar">
-                                <span>الرصيد الافتتاحى</span>
-                            </div>
-                        </div>
-                        <button name="addClient" class="sellbtn">اضافة عميل</button>
-                    </div>
-                </form> 
+            <form method="post" action="" class="othersell">
+                <h3>اضافة عملاء</h3>
+                {% csrf_token %}
+                <div class="addinputs">
+                    <input  name="name" type="text" id="search_bar" class="search_bar" required placeholder="اسم العميل">
+                    <input  name="phone" type="number" id="search_bar" class="search_bar" placeholder="رقم التليفون">
+                    <input  name="opening_balance"  type="number" id="search_bar" class="search_bar" placeholder="الرصيد الافتتاحى">
                 </div>
+                    <button name="addClient" class="sellbtn">اضافة عميل</button>
+            </form> 
             <div class="status">
                 <h2>العملاء</h2>
                 <form method="post" action="" style="width: 100%;display: flex;align-items: center;justify-content: center;flex-direction: column;">
@@ -71,13 +62,6 @@
                 <div style="width: 100%; overflow: scroll; height: fit-content;">
             {% if clients %}
                     <table class="sellstable">
-                        {% if messages %}
-                        <ul class="messages">
-                            {% for message in messages %}
-                                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-                            {% endfor %}
-                        </ul>
-                        {% endif %}
 
                         <thead>
                             <tr>

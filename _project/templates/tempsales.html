@@ -10,19 +10,39 @@
     <title>tempsells page</title>
 </head>
 <body>
-    <div class="maincon">
-        <div class="window" id="windowcon">
-            <i id="closedetwin" class="fa-solid fa-xmark close" ></i>
-            <div id="detailcontainer">
-                
-            </div>
-        </div>
-        <div class="rightcon">
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    <header>
+        <div class="main">
             <div class="minhead">
-                <h3>friends</h3>
+                <i class="fa-solid fa-bars" id="rightconexpend"></i>
             </div>
             <ul>
-                <i class="fa-solid fa-arrow-left" id="rightconexpend"></i>
+                <li class="selected"><a href="{% url "tempsales" %}">الاّجل</a></li>
+            </ul>
+        </div>
+        <div class="username">
+                <a href="{% url "logout" %}"><i class="fa-solid fa-power-off"></i></a>
+                <h3>{{user.username}}<h3>
+        </div>
+    </header>
+    <div class="window" id="windowcon">
+        <i id="closedetwin" class="fa-solid fa-xmark close" ></i>
+        <div id="detailcontainer">
+            
+        </div>
+    </div>
+    <div class="backcon">
+        <div class="rightcon">
+            <div class="minhead">
+                <i class="fa-solid fa-bars" id="rightconexpend"></i>
+            </div>
+            <ul>
                 <a href="{% url "home" %}">
                     <li>
                         <i class="fa-solid fa-house-circle-check"></i>
@@ -53,15 +73,28 @@
                         <span>اضافة بضاعة</span>
                     </li>
                 </a>
-            </ul>
-            <div class="minfoot">
-                <a href="{% url "logout" %}">
-                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                <a href="{% url "profits" %}">
+                    <li>
+                        <i class="fa-solid fa-table-cells"></i>
+                        <span>المبيعات</span>
+                    </li>
                 </a>
-                <span></span>
-            </div>
+                <a href="{% url "shorts" %}">
+                    <li>
+                        <i class="fa-solid fa-arrow-down-short-wide"></i>
+                        <span>النواقص</span>
+                    </li>
+                </a>
+                <a href="{% url "daycome" %}">
+                    <li>
+                        <i class="fa-brands fa-airbnb"></i>
+                        <span>صفحة الادمن</span>
+                    </li>
+                </a>
+            </ul>
         </div>
-                <div class="leftcon">
+        <div class="leftcon">
+            {% if sales %}
             <div class="status">
                 <h2>عمليات اّجل</h2>
                 <form method="post" action="" style="width: 100%;display: flex;align-items: center;justify-content: center;flex-direction: column;">
@@ -70,7 +103,7 @@
                         <div class="wraper">
                             <div class="first">
                                 <input  name="searchInput" value="{{request.POST.searchInput}}" type="text" id="search_bar" class="search_bar" required >
-                                <span>بحث باسم العميل</span>
+                                <span>بحث</span>
                             </div>
                             <div class="search_res" id="search_res">
                                 <table id="suplliersull">
@@ -85,7 +118,6 @@
                     </div>
                 </form> 
                 <div style="width: 100%; overflow: scroll;">
-                    {% if sales %}
                     <table class="sellstable">
                         <thead>
                             
@@ -177,14 +209,7 @@
                                         
                                         <td><form method="post" action="{% url "salepaid" sale.id %}" style="width: 100%;display: flex;align-items: center;justify-content: center;flex-direction: column;">
                                             {% csrf_token %}
-                                            {% if messages %}
-                                            <ul class="messages">
-                                                {% for message in messages %}
-                                                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-                                                {% endfor %}
-                                            </ul>
-                                            {% endif %}
-                                            <button name="paidDone" type="submit" class="sellprod">تم الدفع</button>
+                                            <button name="paidDone" type="submit" class="sellprod">دفع</button>
                                         </form></button></td>
                                     </tr>
                                     {% endfor %}
@@ -207,11 +232,10 @@
                         
                     </div>
                 </div>
-                {% else %}
-                <h2 style="width: 100%;text-align: center;color: #303C54;margin-bottom: 20px;">لا يوجد اّجل</h2>
-                {% endif %}
-
-    </div>
+            </div>
+            {% else %}
+            <h2 style="width: 100%;text-align: center;margin-top: 10%;">لا يوجد اّجل</h2>
+            {% endif %}
         </div>
     </div>
     <script src=" {% static "js/select.js" %} "></script>

@@ -2,9 +2,17 @@ const dayincome = document.getElementById('dayincome');
 const dayloses = document.getElementById('dayloses');
 const daycheck = document.getElementById('daycheck');
 const windowcon = document.getElementById('windowcon');
+const detailcontainer = document.getElementById('detailcontainer');
 const closedetwin = document.getElementById('closedetwin');
 const sellsdel = document.querySelectorAll('#sellsdel');
 const sellsup = document.querySelectorAll('#sellsup');
+const rightconexpend = document.getElementById('rightconexpend')
+const rightcon = document.querySelector('.rightcon')
+//-----------------------------------------------------------------------------------------------------------
+//right container menu size funcion 
+rightconexpend.addEventListener('click',()=>{
+    rightcon.classList.toggle( "active" );
+})
 //---------------------------------------------------------------------------------
 dayincome.onclick=()=>{
     const metadata = dayincome.getAttribute('metadata')
@@ -21,6 +29,7 @@ dayloses.onclick=()=>{
 daycheck.onclick=()=>{
     const metadata = daycheck.getAttribute('metadata')
     windowcon.style.visibility = 'visible'
+    detailcontainer.style.width = '80%'
     windowcon.style.opacity = '1'
     document.getElementById('detailcontainer').innerHTML=metadata
 }

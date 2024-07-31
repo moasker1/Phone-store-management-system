@@ -10,49 +10,32 @@
     <title>kinds page</title>
 </head>
 <body>
-    <div class="maincon">
-        <a href="{% url "home" %}" class="backbtn"><i class="fa-solid fa-chevron-left"></i></a>
-        <div class="window" id="windowcon">
-            <i id="closedetwin" class="fa-solid fa-xmark close" ></i>
-            <div id="detailcontainer">
-                
-            </div>
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    <div class="window" id="windowcon">
+        <i id="closedetwin" class="fa-solid fa-xmark close" ></i>
+        <div id="detailcontainer">
+            
         </div>
+    </div>
+    <div class="backcon">
+        <a href="{% url "home" %}" class="backbtn"><i class="fa-solid fa-chevron-left"></i></a>
         <div class="leftcon" style="width: 100%;">
-            <div class="status">
-                <h2>الموردين</h2>
-                <form method="post" action="" style="width: 100%;display: flex;align-items: center;justify-content: center;flex-direction: column;">
-                    {% csrf_token %}
-                    {% if messages %}
-                    <ul class="messages">
-                        {% for message in messages %}
-                            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-                        {% endfor %}
-                    </ul>
-                    {% endif %}
-                    <div class="addsell">
-                        <div class="wraper">
-                            <div class="first">
-                                <input  name="name" type="text" id="search_bar" class="search_bar" required >
-                                <span>اسم المورد</span>
-                            </div>
-                        </div>
-                        <div class="wraper">
-                            <div class="first">
-                                <input  name="phone" type="number" id="search_bar" class="search_bar">
-                                <span>رقم التليفون</span>
-                            </div>
-                        </div>
-                        <div class="wraper">
-                            <div class="first">
-                                <input  name="for_him"  type="number" id="search_bar" class="search_bar">
-                                <span>له</span>
-                            </div>
-                        </div>
-                        <button name="addSupplier" class="sellbtn">اضافة مورد</button>
-                    </div>
-                </form> 
+            <form method="post" action="" class="othersell">
+                <h3>الموردين</h3>
+                {% csrf_token %}
+                <div class="addinputs">
+                    <input  name="name" type="text" id="search_bar" class="search_bar" required placeholder="اسم المورد">
+                    <input  name="phone" type="number" id="search_bar" class="search_bar" placeholder="رقم التليفون">
+                    <input  name="for_him" type="number" id="search_bar" class="search_bar" placeholder="له">
                 </div>
+                <button name="addSupplier" class="sellbtn">اضافة مورد</button>
+            </form>
             <div class="status">
                 <h2>الموردين</h2>
                 <form method="post" action="" style="width: 100%;display: flex;align-items: center;justify-content: center;flex-direction: column;">
@@ -86,6 +69,7 @@
                                 <th>حذف</th>
                                 <th>تعديل</th>
                                 <th>سداد</th>
+                                <th>عرض</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -111,8 +95,8 @@
                                     <form method="post" action="{% url "supplierUpdate" supplier.id %}" style="width: 100%;display: flex;align-items: center;justify-content: center;flex-direction: column;">
                                         {% csrf_token %}
                                         <h3 style="color:#3D4B64;">تعديل مورد</h3>
-                                        <div class="addsell">
-                                            <div class="wraper" style="width: 20%;">
+                                        <div class="addsell"style="width: 100%;display: flex;align-items: center;justify-content: center;flex-direction: row;">
+                                        <div class="wraper" style="width: 20%;">
                                                 <div class="second">
                                                     <input value="{{supplier.name}}"  name="name" type="text" id="search_bar" class="search_bar" required>
                                                 <span>الاسم</span>
@@ -134,7 +118,34 @@
                                     <button name="supplierUpdate" class="sellbtn">تعديل</button>
                                 </form>
                                 '><i class="fa-solid fa-pencil"></i></button></td>
-                                <td><a href="{% url "suppliers" %}" class="sellprod" style="text-decoration: none;">عرض</a></td>
+                                <td><button class="sellprod" id="sellsup"  metadata='
+                                    <form method="POST" action="{% url "supplierpay" supplier.id %}"style="width: 100%;display: flex;align-items: center;justify-content: center;flex-direction: column;">
+                                        {% csrf_token %}
+                                        <h3 style="color:#3D4B64;">سداد ديون</h3>
+                                        <div class="addsell" style="width: 100%;display: flex;align-items: center;justify-content: center;flex-direction: row;">
+                                            <div class="wraper" style="width: 20%;">
+                                                <div class="second">
+                                                    <input value="{{supplier.name}}"  name="name" type="text" id="search_bar" class="search_bar" readonly>
+                                                <span>الاسم</span>
+                                            </div>
+                                        </div>
+                                        <div class="wraper" style="width: 20%;">
+                                            <div class="second">
+                                                <input value="{{supplier.for_him}}"  min="0" type="number" id="search_bar" class="search_bar" readonly>
+                                                <span>له</span>
+                                            </div>
+                                        </div>
+                                        <div class="wraper" style="width: 20%;">
+                                            <div class="second">
+                                                <input name="paid" type="number" id="search_bar" class="search_bar" >
+                                                <span>المبلغ</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button name="supplierPaid" class="sellbtn">تسديد</button>
+                                </form>
+                                '>سداد</button></td>
+                                <td><a  href="" class="sellprod" style="text-decoration: none;">عرض</a></td>
                             </tr>
                             {% endfor %}
                         </tbody>
