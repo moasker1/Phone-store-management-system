@@ -3,670 +3,557 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
-from django.db.models import Sum
+from django.db.models import Sum, Q, F, DecimalField, ExpressionWrapper
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.db.models import Q
-from .models import RecentAction , Client , Sale , Payment, Kind, Item, Lose, Daycome, Safe, Supplier
-from datetime import date
 from decimal import Decimal
-from django.db.models import F , DecimalField, ExpressionWrapper
-#====================================================================================================================
+from datetime import date
+
+from .models import RecentAction, Client, Sale, Payment, Kind, Item, Lose, Daycome, Safe, Supplier
+
+
+# ─── Helpers ────────────────────────────────────────────────────────────────
+
+def paginate(queryset, page, per_page=20):
+    """Return a paginated page object from a queryset."""
+    paginator = Paginator(queryset, per_page)
+    try:
+        return paginator.page(page)
+    except PageNotAnInteger:
+        return paginator.page(1)
+    except EmptyPage:
+        return paginator.page(paginator.num_pages)
+
+
+def log_action(request, action_type, action_sort, model_affected):
+    """Create a RecentAction audit log entry."""
+    RecentAction.objects.create(
+        user=request.user if request.user.is_authenticated else None,
+        action_type=action_type,
+        action_sort=action_sort,
+        model_affected=model_affected,
+    )
+
+
+def restore_item_quantity(sale):
+    """Restore item stock when a sale is deleted."""
+    Item.objects.filter(id=sale.item.id).update(
+        quantity=F('quantity') + sale.sale_quantity
+    )
+
+
+# ─── Auth ────────────────────────────────────────────────────────────────────
+
 def login_user(request):
     if request.method == 'POST':
         username = request.POST['username']
         password = request.POST['password']
-        user = authenticate(request, username = username, password = password)
+        user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
             return redirect('home')
-        else:
-            messages.warning(request, 'كلمة المرور غير صحيحة')
-
+        messages.warning(request, 'كلمة المرور غير صحيحة')
     return render(request, 'login.html')
-#====================================================================================================================
+
+
 def logout_user(request):
     logout(request)
     return render(request, 'logout.html')
-#====================================================================================================================
-@login_required(login_url="login")
-def home(request) :
-    clients_number = Client.objects.count()
-    items_number = Item.objects.count()
-    suppliers_number = Supplier.objects.count
-    all_items = Item.objects.all().order_by("-date")
-    shorts = [item for item in all_items if item.quantity == 0 ]
-    shorts_number = 0
-    for short in shorts :
-        shorts_number += 1
-    context = {
-        "clients_number" : clients_number,
-        "items_number" : items_number,
-        "suppliers_number" : suppliers_number,
-        "shorts_number" : shorts_number,
-    }
-    return render(request, "home.html" , context)
-#====================================================================================================================
-def kinds(request):
-    kinds = Kind.objects.all()
-    if "addKind" in request.POST :
-        name = request.POST.get('name')
-        Kind.objects.create(name=name)
-        messages.success(request,"تم اضافة نوع بنجاح")
-        return redirect("kinds")
-    context ={'kinds': kinds}
-    return render(request, "kinds.html", context)
-#====================================================================================================================
-def kind_delete(request, id):
-    kind_to_delete = get_object_or_404(Kind, id =id )
 
-    if "kindDelete" in request.POST :
-        kind_to_delete.delete()
+
+# ─── Home ────────────────────────────────────────────────────────────────────
+
+@login_required(login_url="login")
+def home(request):
+    shorts_number = Item.objects.filter(quantity=0).count()
+    context = {
+        "clients_number": Client.objects.count(),
+        "items_number": Item.objects.count(),
+        "suppliers_number": Supplier.objects.count(),
+        "shorts_number": shorts_number,
+    }
+    return render(request, "home.html", context)
+
+
+# ─── Kinds ───────────────────────────────────────────────────────────────────
+
+def kinds(request):
+    if "addKind" in request.POST:
+        Kind.objects.create(name=request.POST.get('name'))
+        messages.success(request, "تم اضافة نوع بنجاح")
+        return redirect("kinds")
+
+    context = {'kinds': Kind.objects.all()}
+    return render(request, "kinds.html", context)
+
+
+def kind_delete(request, id):
+    kind = get_object_or_404(Kind, id=id)
+    if "kindDelete" in request.POST:
+        kind.delete()
         messages.success(request, "تم حذف النوع بنجاح")
         return redirect("kinds")
-#====================================================================================================================
+
+
+# ─── Items ───────────────────────────────────────────────────────────────────
+
 def items(request):
-    items = Item.objects.all().order_by("-date")
-    kinds = Kind.objects.all()
-    paginator = Paginator(items ,20)
+    all_items = Item.objects.all().order_by("-date")
     page = request.GET.get('page')
-    try:
-        item_list = paginator.page(page)
-    except PageNotAnInteger:
-        item_list = paginator.page(1)
-    except EmptyPage :
-        item_list = paginator.page(paginator.num_pages)
+    item_list = paginate(all_items, page, per_page=20)
 
     if "addItem" in request.POST:
-        name = request.POST.get('name')
-        kind_name = request.POST.get('kind')
-        prand = request.POST.get('prand')
-        quantity = request.POST.get('quantity')
-        price = request.POST.get('price')
-        item_date = request.POST.get('date')
-        if not item_date:
-            item_date = date.today()
+        return _handle_add_item(request)
 
-        item_id = request.POST.get('item_id', None)
-
-        if Item.objects.filter(name=name).exclude(id=item_id).exists():
-            messages.warning(request, f'المنتج ({name}) موجود بالفعل في قاعدة البيانات')
-            return redirect("items")
-
-        kind = Kind.objects.get(name=kind_name)
-        Item.objects.create(name=name, kind=kind, prand=prand, quantity=quantity, price=price, date=item_date)
-        messages.success(request, "تم اضافة صنف بنجاح")
-        return redirect("items")
-    
-    elif 'search' in request.POST :
+    if 'search' in request.POST:
         search_input = request.POST.get('searchInput')
-        results = [result['id'] for result in Item.objects.all().filter(Q(name__icontains=search_input)).values()]
-        item_list = [Item.objects.get(pk = id) for id in results]
-    
-    context ={
-        'items': item_list,
-        'kinds': kinds,
-    }
-    return render(request, "items.html", context)
-#====================================================================================================================
-def item_delete(request, id):
-    item_to_delete = get_object_or_404(Item, id =id )
+        item_list = list(Item.objects.filter(Q(name__icontains=search_input)))
 
-    if "itemDelete" in request.POST :
-        item_to_delete.delete()
+    context = {'items': item_list, 'kinds': Kind.objects.all()}
+    return render(request, "items.html", context)
+
+
+def _handle_add_item(request):
+    name = request.POST.get('name')
+    kind_name = request.POST.get('kind')
+    prand = request.POST.get('prand')
+    quantity = request.POST.get('quantity')
+    price = request.POST.get('price')
+    item_date = request.POST.get('date') or date.today()
+    item_id = request.POST.get('item_id')
+
+    if Item.objects.filter(name=name).exclude(id=item_id).exists():
+        messages.warning(request, f'المنتج ({name}) موجود بالفعل في قاعدة البيانات')
+        return redirect("items")
+
+    kind = Kind.objects.get(name=kind_name)
+    Item.objects.create(name=name, kind=kind, prand=prand, quantity=quantity, price=price, date=item_date)
+    messages.success(request, "تم اضافة صنف بنجاح")
+    return redirect("items")
+
+
+def item_delete(request, id):
+    item = get_object_or_404(Item, id=id)
+    if "itemDelete" in request.POST:
+        item.delete()
         messages.success(request, "تم حذف المنتج بنجاح")
         return redirect("items")
-#====================================================================================================================
+
+
+def _apply_item_update(request, id, redirect_target):
+    """Shared logic for updating an item from either items or shorts page."""
+    name = request.POST['name']
+    kind_name = request.POST['kind_name']
+    prand = request.POST['prand']
+    quantity = request.POST['quantity']
+
+    if Item.objects.filter(name=name).exclude(id=id).exists():
+        messages.warning(request, f'المنتج ({name}) موجود بالفعل في قاعدة البيانات')
+        return redirect(redirect_target)
+
+    kind = Kind.objects.get(name=kind_name)
+    item = Item.objects.get(id=id)
+    item.name = name
+    item.kind = kind
+    item.prand = prand
+    item.quantity = quantity
+    item.save()
+
+    messages.success(request, 'تم تعديل بيانات الصنف بنجاح', extra_tags='success')
+    return redirect(redirect_target)
+
+
 def item_update(request, id):
-
     if 'itemUpdate' in request.POST:
-        name = request.POST['name']
-        kind_name = request.POST['kind_name']
-        prand = request.POST['prand']
-        quantity = request.POST['quantity']
-
-        kind = Kind.objects.get(name=kind_name)
-
-        if Item.objects.filter(name=name).exclude(id=id).exists():
-            messages.warning(request, f'المنتج ({name}) موجود بالفعل في قاعدة البيانات')
-            return redirect("items")
-        
-        edit = Item.objects.get(id=id)
-        edit.name = name
-        edit.kind = kind
-        edit.prand = prand
-        edit.quantity = quantity
-        edit.save()
-
-        messages.success(request, 'تم تعديل بيانات الصنف بنجاح', extra_tags='success')
-        return redirect("items")
-    
+        return _apply_item_update(request, id, "items")
     if 'itemUpdateShort' in request.POST:
-        name = request.POST['name']
-        kind_name = request.POST['kind_name']
-        prand = request.POST['prand']
-        quantity = request.POST['quantity']
+        return _apply_item_update(request, id, "shorts")
 
-        kind = Kind.objects.get(name=kind_name)
 
-        if Item.objects.filter(name=name).exclude(id=id).exists():
-            messages.warning(request, f'المنتج ({name}) موجود بالفعل في قاعدة البيانات')
-            return redirect("shorts")
-        
-        edit = Item.objects.get(id=id)
-        edit.name = name
-        edit.kind = kind
-        edit.prand = prand
-        edit.quantity = quantity
-        edit.save()
+# ─── Sales ───────────────────────────────────────────────────────────────────
 
-        messages.success(request, 'تم تعديل بيانات الصنف بنجاح', extra_tags='success')
-        return redirect("shorts")
-#====================================================================================================================
 def sale_page(request):
-    items = Item.objects.all().order_by("-date")
-
-    paginator = Paginator(items ,20)
+    all_items = Item.objects.all().order_by("-date")
     page = request.GET.get('page')
-    try:
-        items_list = paginator.page(page)
-    except PageNotAnInteger:
-        items_list = paginator.page(1)
-    except EmptyPage :
-        items_list = paginator.page(paginator.num_pages)
+    items_list = paginate(all_items, page, per_page=20)
 
-    if 'search' in request.POST :
+    if 'search' in request.POST:
         search_input = request.POST.get('searchInput')
-        results = [result['id'] for result in Item.objects.all().filter(Q(name__icontains=search_input)).values()]
-        items_list = [Item.objects.get(pk = id) for id in results]
+        items_list = list(Item.objects.filter(Q(name__icontains=search_input)))
 
-    context ={
-        "items" : items_list,
-    }
+    return render(request, "sales.html", {"items": items_list})
 
-    return render(request, "sales.html", context)
-#====================================================================================================================
+
 @login_required(login_url="login")
 def sell(request, id):
-    if "sell" in request.POST:
-        item_id = request.POST.get('item')
-        item = get_object_or_404(Item, pk=item_id)
-        
-        item_id = request.POST.get('item')
-        sale_date = request.POST.get('date')  
-        client_name = request.POST.get('client_name')
-        client_phone = request.POST.get('client_phone')
-        crash = request.POST.get('crash')
-        paid = request.POST.get('paid')
-        remain = request.POST.get('remain')
-        method = request.POST.get('method')
-        sale_price = request.POST.get('sale_price')
-        sale_quantity = request.POST.get('sale_quantity')
+    if "sell" not in request.POST:
+        return redirect("sales")
 
-        client_name = client_name.strip()
+    item = get_object_or_404(Item, pk=request.POST.get('item'))
+    data = _extract_sale_form_data(request)
 
-        sale_price = Decimal(sale_price)
-        sale_quantity = Decimal(sale_quantity)
-        paid = Decimal(paid)
-        remain = Decimal(remain)
+    if data['sale_quantity'] > item.quantity:
+        messages.error(request, "الكمية المباعة اكبر من الكمية المتبقية")
+        return redirect("sales")
 
-        if not client_name:
-            client_name = "-"
-        if not sale_date :
-            sale_date = date.today()
-        if sale_quantity > item.quantity:
-            messages.error(request, "الكمية المباعة اكبر من الكمية المتبقية")
-            return redirect("sales")
-        if not paid:
-            paid = 0
-        if not crash:
-            crash = "-"
-        if not client_phone:
-            client_phone = "-"
-        if client_name :
-            if Client.objects.filter(name=client_name).exclude(id=id).exists():
-                client = Client.objects.get(name=client_name) 
-                Sale.objects.create(client=client, item_id=item_id, date=sale_date, crash=crash,
-                            sale_price=sale_price, remain=remain, paid=paid, sale_quantity=sale_quantity,
-                            client_phone=client_phone, method=method)
-                Item.objects.filter(id=item_id).update(quantity=F('quantity') - sale_quantity)
-                messages.success(request, "تمت إضافة عملية بيع بنجاح")
-                return redirect("sales")       
+    client_name = data['client_name']
+    client = None
 
-            else :
-                try :
-                    client = Client.objects.get(name=client_name)
-                except Client.DoesNotExist:
-                    client = Client.objects.create(name=client_name, phone = "-", opening_balance = 0, notes="-")
-                    Sale.objects.create(client=client, item_id=item_id, date=sale_date, crash=crash,
-                                sale_price=sale_price, remain=remain, paid=paid, sale_quantity=sale_quantity,
-                                client_phone=client_phone, method=method)
-                    Item.objects.filter(id=item_id).update(quantity=F('quantity') - sale_quantity)
-                    messages.success(request, "تمت إضافة عملية بيع بنجاح")
-                    return redirect("sales")       
-            
-        
-        Sale.objects.create(client_name=client_name, item_id=item_id, date=sale_date, crash=crash,
-                                   sale_price=sale_price, remain=remain, paid=paid, sale_quantity=sale_quantity,
-                                   client_phone=client_phone, method=method)
+    if client_name and client_name != "-":
+        client = _get_or_create_client(client_name)
 
-        Item.objects.filter(id=item_id).update(quantity=F('quantity') - sale_quantity)
-        Payment.objects.create(paid_money=paid)
+    Sale.objects.create(
+        client=client,
+        item=item,
+        date=data['sale_date'],
+        crash=data['crash'],
+        sale_price=data['sale_price'],
+        remain=data['remain'],
+        paid=data['paid'],
+        sale_quantity=data['sale_quantity'],
+        client_phone=data['client_phone'],
+        method=data['method'],
+        client_name=client_name,
+    )
+    Item.objects.filter(id=item.id).update(quantity=F('quantity') - data['sale_quantity'])
 
-        messages.success(request, "تمت إضافة عملية بيع بنجاح")
-        return redirect("sales")       
-#====================================================================================================================
+    messages.success(request, "تمت إضافة عملية بيع بنجاح")
+    return redirect("sales")
+
+
+def _extract_sale_form_data(request):
+    """Parse and normalise sale form POST data."""
+    client_name = (request.POST.get('client_name') or '').strip() or "-"
+    client_phone = request.POST.get('client_phone') or "-"
+    crash = request.POST.get('crash') or "-"
+    sale_date = request.POST.get('date') or date.today()
+    method = request.POST.get('method')
+    sale_price = Decimal(request.POST.get('sale_price'))
+    sale_quantity = Decimal(request.POST.get('sale_quantity'))
+    paid = Decimal(request.POST.get('paid') or 0)
+    remain = Decimal(request.POST.get('remain'))
+
+    return {
+        'client_name': client_name,
+        'client_phone': client_phone,
+        'crash': crash,
+        'sale_date': sale_date,
+        'method': method,
+        'sale_price': sale_price,
+        'sale_quantity': sale_quantity,
+        'paid': paid,
+        'remain': remain,
+    }
+
+
+def _get_or_create_client(name):
+    client, _ = Client.objects.get_or_create(
+        name=name,
+        defaults={'phone': "-", 'opening_balance': 0, 'notes': "-"}
+    )
+    return client
+
+
+def _apply_sale_update(request, id):
+    """Update shared sale fields (client_name, paid, method)."""
+    sale = Sale.objects.get(id=id)
+    sale.client_name = request.POST["client_name"]
+    sale.paid = request.POST["paid"]
+    sale.method = request.POST["method"]
+    sale.save()
+    messages.success(request, 'تم تعديل بيانات العملية بنجاح', extra_tags='success')
+
+
 def sale_update(request, id):
-
     if "saleUpdate" in request.POST:
-        client_name = request.POST["client_name"]
-        paid = request.POST["paid"]
-        method = request.POST["method"]
+        _apply_sale_update(request, id)
+        return redirect("profits")
 
-        edit = Sale.objects.get(id=id)
-
-        edit.client_name = client_name
-        edit.paid = paid
-        edit.method = method
-        edit.save()
-
-        messages.success(request, 'تم تعديل بيانات العملية بنجاح', extra_tags='success')
-        return redirect("profits")  
-    
     if "saleUpdate2" in request.POST:
-        client_name = request.POST["client_name"]
-        paid = request.POST["paid"]
-        method = request.POST["method"]
-
-        edit = Sale.objects.get(id=id)
-
-        edit.client_name = client_name
-        edit.paid = paid
-        edit.method = method
-        edit.save()
-        messages.success(request, 'تم تعديل بيانات العملية بنجاح', extra_tags='success')
-        return redirect("tempsales")  
+        _apply_sale_update(request, id)
+        return redirect("tempsales")
 
     if "saleUpdate3" in request.POST:
-        sale = get_object_or_404(Sale, id=id)
-        client_id = sale.client.id
+        client_id = get_object_or_404(Sale, id=id).client.id
+        _apply_sale_update(request, id)
+        return redirect("clientpage", id=client_id)
 
-        client_name = request.POST["client_name"]
-        paid = request.POST["paid"]
-        method = request.POST["method"]
 
-        edit = Sale.objects.get(id=id)
-    
-        edit.client_name = client_name
-        edit.paid = paid
-        edit.method = method
-        edit.save()
+def _restore_and_delete_sale(sale):
+    restore_item_quantity(sale)
+    sale.delete()
+    messages.success
 
-        messages.success(request, 'تم تعديل بيانات العملية بنجاح', extra_tags='success')
-        return redirect("clientpage", id= client_id)  
-#====================================================================================================================
+
 def sale_delete(request, id):
-    sale_to_delete = get_object_or_404(Sale, id=id)
+    sale = get_object_or_404(Sale, id=id)
 
     if "saleDelete" in request.POST:
-        sale_quantity = sale_to_delete.sale_quantity
-        item = sale_to_delete.item
-        Item.objects.filter(id=item.id).update(quantity=F('quantity') + sale_quantity)
-        sale_to_delete.delete()
-
+        restore_item_quantity(sale)
+        sale.delete()
         messages.success(request, "تم حذف العملية بنجاح")
-        return redirect("profits")    
-    
+        return redirect("profits")
+
     if "saleDelete2" in request.POST:
-        sale_quantity = sale_to_delete.sale_quantity
-        item = sale_to_delete.item
-        Item.objects.filter(id=item.id).update(quantity=F('quantity') + sale_quantity)
-        sale_to_delete.delete()
-
+        restore_item_quantity(sale)
+        sale.delete()
         messages.success(request, "تم حذف العملية بنجاح")
-        return redirect("tempsales")    
+        return redirect("tempsales")
 
     if "saleDelete3" in request.POST:
-        sale_quantity = sale_to_delete.sale_quantity
-        item = sale_to_delete.item
-        Item.objects.filter(id=item.id).update(quantity=F('quantity') + sale_quantity)
-        sale_to_delete.delete()
-        client_id = sale_to_delete.client.id
-
+        client_id = sale.client.id
+        restore_item_quantity(sale)
+        sale.delete()
         messages.success(request, "تم حذف العملية بنجاح")
-        return redirect("clientpage" , id=client_id)    
-#====================================================================================================================
+        return redirect("clientpage", id=client_id)
+
+
 def paid_done(request, id):
-    sale_to_done = get_object_or_404(Sale, id=id)
-
+    sale = get_object_or_404(Sale, id=id)
     if "paidDone" in request.POST:
-        total = sale_to_done.total
-        sale_to_done.paid = total
-        sale_to_done.remain = 0
-        sale_to_done.save()
-
+        sale.paid = sale.total
+        sale.remain = 0
+        sale.save()
         messages.success(request, "تم تأكيد الدفع بنجاح")
-        return redirect("tempsales")   
-#====================================================================================================================
+        return redirect("tempsales")
+
+
+# ─── Clients ─────────────────────────────────────────────────────────────────
+
 @login_required(login_url="login")
 def clients(request):
-    client = Client.objects.all()
-    paginator = Paginator(client ,20)
     page = request.GET.get('page')
-    try:
-        client_list = paginator.page(page)
-    except PageNotAnInteger:
-        client_list = paginator.page(1)
-    except EmptyPage :
-        client_list = paginator.page(paginator.num_pages)
+    client_list = paginate(Client.objects.all(), page, per_page=20)
 
     if "addClient" in request.POST:
-        name = request.POST.get("name")
-        opening_balance = request.POST.get("opening_balance")
-        phone = request.POST.get("phone")
+        return _handle_add_client(request)
 
-        if Client.objects.filter(name=name).exists():
-            messages.warning(request, f'اسم العميل ({name}) موجود بالفعل في قاعدة البيانات')
-            return redirect("clients")
-        
-        if not opening_balance :
-            opening_balance = 0
-
-        Client.objects.create(name=name, opening_balance =opening_balance, phone=phone)
-        messages.success(request, "تم اضافة عميل جديد بنجاح")
-        return redirect("clients")
-
-
-    if 'search' in request.POST :
+    if 'search' in request.POST:
         search_input = request.POST.get('searchInput')
-        results = [result['id'] for result in Client.objects.all().filter(Q(name__icontains=search_input)).values()]
-        client_list = [Client.objects.get(pk = id) for id in results]
+        client_list = list(Client.objects.filter(Q(name__icontains=search_input)))
+
+    return render(request, "clients.html", {"clients": client_list})
 
 
-    context = {"clients" : client_list}
-    return render(request,"clients.html", context)
-#====================================================================================================================
-def client_update(request, id):
+def _handle_add_client(request):
+    name = request.POST.get("name")
+    opening_balance = request.POST.get("opening_balance") or 0
+    phone = request.POST.get("phone")
 
-    if 'clientUpdate' in request.POST:
-        name = request.POST['name']
-        opening_balance = request.POST['opening_balance']
-        phone = request.POST['phone']
-
-        name = name.strip()
-        old_client_data = Client.objects.filter(id=id).values().first()
-
-        if Client.objects.filter(name=name).exclude(id=id).exists():
-            messages.warning(request, f'اسم العميل ({name}) موجود بالفعل في قاعدة البيانات')
-            return redirect("clientpage", id=id)
-        
-        edit = Client.objects.get(id=id)
-
-        edit.name = name
-        edit.opening_balance = opening_balance
-        edit.phone = phone
-        edit.save()
-
-        messages.success(request, 'تم تعديل بيانات العميل بنجاح', extra_tags='success')
+    if Client.objects.filter(name=name).exists():
+        messages.warning(request, f'اسم العميل ({name}) موجود بالفعل في قاعدة البيانات')
         return redirect("clients")
-#====================================================================================================================
-def client_delete(request, id):
-    client_to_delete = get_object_or_404(Client, id =id )
 
-    if "clientDelete" in request.POST :
-        RecentAction.objects.create(
-            user=request.user if request.user.is_authenticated else None,
-            action_type='حذف عميل',
-            action_sort = 'حذف',
-            model_affected=f'تم حذف العميل ({client_to_delete.name})',
-        )
-        client_to_delete.delete()
+    Client.objects.create(name=name, opening_balance=opening_balance, phone=phone)
+    messages.success(request, "تم اضافة عميل جديد بنجاح")
+    return redirect("clients")
+
+
+def client_update(request, id):
+    if 'clientUpdate' not in request.POST:
+        return
+
+    name = request.POST['name'].strip()
+    if Client.objects.filter(name=name).exclude(id=id).exists():
+        messages.warning(request, f'اسم العميل ({name}) موجود بالفعل في قاعدة البيانات')
+        return redirect("clientpage", id=id)
+
+    client = Client.objects.get(id=id)
+    client.name = name
+    client.opening_balance = request.POST['opening_balance']
+    client.phone = request.POST['phone']
+    client.save()
+
+    messages.success(request, 'تم تعديل بيانات العميل بنجاح', extra_tags='success')
+    return redirect("clients")
+
+
+def client_delete(request, id):
+    client = get_object_or_404(Client, id=id)
+    if "clientDelete" in request.POST:
+        log_action(request, 'حذف عميل', 'حذف', f'تم حذف العميل ({client.name})')
+        client.delete()
         messages.success(request, "تم حذف العميل بنجاح")
         return redirect("clients")
-#====================================================================================================================
+
+
 @login_required(login_url="login")
 def client_page(request, id):
-    items = Item.objects.all()
     client = get_object_or_404(Client, id=id)
-    sales = Sale.objects.filter(client=client).order_by("-date")
-
-    context = {"client": client, "sales": sales, "items":items}
+    context = {
+        "client": client,
+        "sales": Sale.objects.filter(client=client).order_by("-date"),
+        "items": Item.objects.all(),
+    }
     return render(request, "clientpage.html", context)
-#====================================================================================================================
+
+
+# ─── Profits ─────────────────────────────────────────────────────────────────
+
 @login_required(login_url="login")
 def profits(request):
-    sales = Sale.objects.all().order_by("-date")
-    paginator = Paginator(sales ,20)
     page = request.GET.get('page')
-    try:
-        sale_list = paginator.page(page)
-    except PageNotAnInteger:
-        sale_list = paginator.page(1)
-    except EmptyPage :
-        sale_list = paginator.page(paginator.num_pages)
+    sale_list = paginate(Sale.objects.all().order_by("-date"), page, per_page=20)
 
-    if 'search' in request.POST :
+    if 'search' in request.POST:
         search_input = request.POST.get('searchInput')
-        results = [result['id'] for result in Sale.objects.all().filter(Q(client_name__icontains=search_input)).values()]
-        sale_list = [Sale.objects.get(pk = id) for id in results]
+        sale_list = list(Sale.objects.filter(Q(client_name__icontains=search_input)))
 
-        
-    context ={
-        "sales" : sale_list,
-    }
-    return render(request,"profits.html", context)
-#====================================================================================================================
+    return render(request, "profits.html", {"sales": sale_list})
+
+
+# ─── Payments ────────────────────────────────────────────────────────────────
+
 def pay_update(request, id):
-    old_pay_data = Payment.objects.values().get(id=id)
+    if "payupdate" not in request.POST:
+        return
 
-    if "payupdate" in request.POST:
-        client = request.POST["client"]
-        paid_money = request.POST["paid_money"]
+    old_data = Payment.objects.values().get(id=id)
+    client_name = request.POST["client"].strip()
+    paid_money = Decimal(request.POST["paid_money"])
 
-        client = client.strip()
-
-        paid_money = Decimal(paid_money)
-
-        try:
-            client_obj = Client.objects.get(name=client)
-        except Client.DoesNotExist:
-            messages.warning(request, f"اسم العميل ({client}) غير موجود   ")
-            return redirect("profits")
-
-        edit = Payment.objects.get(id=id)
-
-        old_client = old_pay_data["client_id"]
-        old_paid_money = old_pay_data["paid_money"]
-
-        changes = []
-        if client_obj.id != old_client:
-            changes.append(f'اسم العميل من {Client.objects.get(id=old_client).name} إلى {client_obj.name}')
-        if str(paid_money) != str(old_paid_money):
-            changes.append(f'السعر من {old_paid_money} إلى {paid_money}')
-
-        edit.client = client_obj
-        edit.paid_money = paid_money
-        edit.save()
-
-        RecentAction.objects.create(
-            user=request.user if request.user.is_authenticated else None,
-            action_type='تعديل استلام نقدية',
-            action_sort = 'تعديل',
-            model_affected=f'تم تعديل عملية استلام نقدية: {", ".join(changes)}',
-        )
-        messages.success(request, 'تم تعديل بيانات التحصيل بنجاح', extra_tags='success')
+    try:
+        client_obj = Client.objects.get(name=client_name)
+    except Client.DoesNotExist:
+        messages.warning(request, f"اسم العميل ({client_name}) غير موجود")
         return redirect("profits")
-#====================================================================================================================
-def pay_delete(request, id):
-    pay_to_delete = get_object_or_404(Payment, id =id )
-    client_id = pay_to_delete.client.id
 
-    if "paydelete" in request.POST :
-        RecentAction.objects.create(
-            user=request.user if request.user.is_authenticated else None,
-            action_type='حذف عملية دفع',
-            action_sort = 'حذف',
-            model_affected=f'تم حذف عملية دفع للعميل ({pay_to_delete.client.name}) و كانت بقيمة ({pay_to_delete.paid_money})',
+    payment = Payment.objects.get(id=id)
+    changes = _build_payment_changes(old_data, client_obj, paid_money)
+
+    payment.client = client_obj
+    payment.paid_money = paid_money
+    payment.save()
+
+    log_action(request, 'تعديل استلام نقدية', 'تعديل',
+               f'تم تعديل عملية استلام نقدية: {", ".join(changes)}')
+    messages.success(request, 'تم تعديل بيانات التحصيل بنجاح', extra_tags='success')
+    return redirect("profits")
+
+
+def _build_payment_changes(old_data, new_client, new_paid_money):
+    changes = []
+    if new_client.id != old_data["client_id"]:
+        old_name = Client.objects.get(id=old_data["client_id"]).name
+        changes.append(f'اسم العميل من {old_name} إلى {new_client.name}')
+    if str(new_paid_money) != str(old_data["paid_money"]):
+        changes.append(f'السعر من {old_data["paid_money"]} إلى {new_paid_money}')
+    return changes
+
+
+def pay_delete(request, id):
+    payment = get_object_or_404(Payment, id=id)
+    if "paydelete" in request.POST:
+        log_action(
+            request, 'حذف عملية دفع', 'حذف',
+            f'تم حذف عملية دفع للعميل ({payment.client.name}) و كانت بقيمة ({payment.paid_money})'
         )
-        pay_to_delete.delete()
+        payment.delete()
         messages.success(request, "تم حذف العملية بنجاح")
         return redirect("profits")
-#====================================================================================================================
+
+
+# ─── Loses ───────────────────────────────────────────────────────────────────
+
 def loses(request):
-    loses = Lose.objects.all().order_by("-date")
-    paginator = Paginator(loses ,20)
     page = request.GET.get('page')
-    try:
-        loses_list = paginator.page(page)
-    except PageNotAnInteger:
-        loses_list = paginator.page(1)
-    except EmptyPage :
-        loses_list = paginator.page(paginator.num_pages)
+    loses_list = paginate(Lose.objects.all().order_by("-date"), page, per_page=20)
 
-    if "addLose" in request.POST :
-        lose_type = request.POST.get('lose_type')
-        lose_money = request.POST.get('lose_money')
-        lose_date = request.POST.get('date')
-        notes = request.POST.get('notes')
+    if "addLose" in request.POST:
+        return _handle_add_lose(request)
 
-        if not notes :
-            notes = "-"
+    return render(request, 'loses.html', {'loses': loses_list})
 
-        elif not lose_date :
-            lose_date = date.today()
-        
-        Lose.objects.create(lose_type=lose_type,lose_money=lose_money, date=lose_date, notes=notes)
-        messages.success(request,"تم اضافة مصروف بنجاح")
-        return redirect("loses")
-    
-    context ={
-        'loses' : loses_list
 
-    }
+def _handle_add_lose(request):
+    notes = request.POST.get('notes') or "-"
+    lose_date = request.POST.get('date') or date.today()
+    Lose.objects.create(
+        lose_type=request.POST.get('lose_type'),
+        lose_money=request.POST.get('lose_money'),
+        date=lose_date,
+        notes=notes,
+    )
+    messages.success(request, "تم اضافة مصروف بنجاح")
+    return redirect("loses")
 
-    return render(request,'loses.html', context)
-#====================================================================================================================
+
 def lose_delete(request, id):
-    lose_to_delete = get_object_or_404(Lose, id =id )
-
-    if "loseDelete" in request.POST :
-        lose_to_delete.delete()
+    lose = get_object_or_404(Lose, id=id)
+    if "loseDelete" in request.POST:
+        lose.delete()
         messages.success(request, "تم حذف المصروف بنجاح")
         return redirect("loses")
-#====================================================================================================================
+
+
 def lose_update(request, id):
+    if 'loseUpdate' not in request.POST:
+        return
 
-    if 'loseUpdate' in request.POST:
-        lose_type = request.POST['lose_type']
-        lose_money = request.POST['lose_money']
-        notes = request.POST['notes']
+    lose = Lose.objects.get(id=id)
+    lose.lose_type = request.POST['lose_type']
+    lose.lose_money = request.POST['lose_money']
+    lose.notes = request.POST['notes']
+    lose.save()
 
-           
-        edit = Lose.objects.get(id=id)
-        edit.lose_type = lose_type
-        edit.lose_money = lose_money
-        edit.notes = notes
-        edit.save()
+    messages.success(request, 'تم تعديل بيانات المصروف بنجاح', extra_tags='success')
+    return redirect("loses")
 
-        messages.success(request, 'تم تعديل بيانات المصروف بنجاح', extra_tags='success')
-        return redirect("loses")
-#====================================================================================================================
+
+# ─── Shorts ──────────────────────────────────────────────────────────────────
+
 def shorts(request):
-    all_items = Item.objects.all().order_by("-date")
-    shorts = [item for item in all_items if item.quantity == 0 ]
-    paginator = Paginator(shorts, 30)
-
+    out_of_stock = Item.objects.filter(quantity=0).order_by("-date")
     page = request.GET.get('page')
-    try:
-        shorts_list = paginator.page(page)
-    except PageNotAnInteger:
-        shorts_list = paginator.page(1)
-    except EmptyPage :
-        shorts_list = paginator.page(paginator.num_pages)
+    shorts_list = paginate(out_of_stock, page, per_page=30)
 
-
-    if 'search' in request.POST :
+    if 'search' in request.POST:
         search_input = request.POST.get('searchInput')
-        results = [result['id'] for result in Item.objects.all().filter(Q(name__icontains=search_input)).values()]
-        shorts_list = [Item.objects.get(pk = id) for id in results]
+        shorts_list = list(Item.objects.filter(Q(name__icontains=search_input)))
 
-    context = {
-        'items': shorts_list,
-    }
+    return render(request, 'shorts.html', {'items': shorts_list})
 
-    return render(request, 'shorts.html', context)
-#====================================================================================================================
+
+# ─── Temp Sales ──────────────────────────────────────────────────────────────
+
 def tempsales(request):
-    all_sales = Sale.objects.all().order_by("-date")
-    tempsales = [sale for sale in all_sales if sale.remain > 0 ]
-    paginator = Paginator(tempsales, 30)
-
+    pending = Sale.objects.filter(remain__gt=0).order_by("-date")
     page = request.GET.get('page')
-    try:
-        temp_list = paginator.page(page)
-    except PageNotAnInteger:
-        temp_list = paginator.page(1)
-    except EmptyPage :
-        temp_list = paginator.page(paginator.num_pages)
+    temp_list = paginate(pending, page, per_page=30)
 
-
-    if 'search' in request.POST :
+    if 'search' in request.POST:
         search_input = request.POST.get('searchInput')
-        results = [result['id'] for result in Sale.objects.all().filter(Q(client_name__icontains=search_input)).values()]
-        temp_list = [Sale.objects.get(pk = id) for id in results]
+        temp_list = list(Sale.objects.filter(Q(client_name__icontains=search_input)))
 
-    context = {
-        'sales': temp_list,
-    }
+    return render(request, 'tempsales.html', {'sales': temp_list})
 
-    return render(request, 'tempsales.html', context)
-#====================================================================================================================
+
+# ─── Daycome ─────────────────────────────────────────────────────────────────
+
 def daycome(request):
     safe = get_object_or_404(Safe, id=1)
-    all_daycoms = Daycome.objects.all().order_by("-date")
-    paginator = Paginator(all_daycoms, 30)
-    page = request.GET.get('page')
-    try:
-        comes_list = paginator.page(page)
-    except PageNotAnInteger:
-        comes_list = paginator.page(1)
-    except EmptyPage:
-        comes_list = paginator.page(paginator.num_pages)
-
     today = date.today()
 
-    today_profits = Sale.objects.filter(date=today)
-    total_profits = today_profits.aggregate(Sum('paid'))['paid__sum'] or 0
+    today_profits_qs = Sale.objects.filter(date=today)
+    today_loses_qs = Lose.objects.filter(date=today)
 
-    today_loses = Lose.objects.filter(date=today)
-    total_loses = today_loses.aggregate(Sum('lose_money'))['lose_money__sum'] or 0
-
+    total_profits = today_profits_qs.aggregate(Sum('paid'))['paid__sum'] or 0
+    total_loses = today_loses_qs.aggregate(Sum('lose_money'))['lose_money__sum'] or 0
     net_profit = total_profits - total_loses
+    total_win = (
+        Sale.objects.filter(date=today)
+        .annotate(win=ExpressionWrapper(F('sale_price') - F('item__price'), output_field=DecimalField()))
+        .aggregate(Sum('win'))['win__sum'] or 0
+    )
 
-    today_sales_with_win = Sale.objects.filter(date=today).annotate(win=ExpressionWrapper(F('sale_price') - F('item__price'), output_field=DecimalField())).values('win')
-    total_win = today_sales_with_win.aggregate(Sum('win'))['win__sum'] or 0
+    page = request.GET.get('page')
+    comes_list = paginate(Daycome.objects.all().order_by("-date"), page, per_page=30)
 
     if "dayCome" in request.POST:
-        total_profits = request.POST.get('total_profits')
-        total_loses = request.POST.get('total_loses')
-        total_payments = request.POST.get('payments')
-        date_str = request.POST.get('date')
-        net_profit = request.POST.get('net_profit')
-        win = request.POST.get('win')
-        cash = request.POST.get('cash')
-        wallet = request.POST.get('wallet')
+        return _handle_daycome_create(request)
 
-        if Daycome.objects.filter(date=date_str).exists():
-            messages.warning(request, f'تقفيل هذا اليوم محفوظ بالفعل في قاعدة البيانات')
-            return redirect('daycome')
-
-        Daycome.objects.create(loses=total_loses, income=total_profits, date=date_str, net_profit=net_profit, win = win , cash=cash, wallet=wallet, payments = total_payments)
-        messages.success(request, "تم حفظ تقفيل اليوم")
-        return redirect("daycome")
-
-    elif 'search' in request.POST:
+    if 'search' in request.POST:
         search_input = request.POST.get('searchInput')
-        results = [result['id'] for result in Daycome.objects.all().filter(Q(date__icontains=search_input)).values()]
-        comes_list = [Daycome.objects.get(pk=id) for id in results]
+        comes_list = list(Daycome.objects.filter(Q(date__icontains=search_input)))
 
     context = {
         'total_profits': total_profits,
@@ -675,189 +562,186 @@ def daycome(request):
         'total_win': total_win,
         'today': today,
         'daycomes': comes_list,
-        'today_profits': today_profits,
-        'today_loses': today_loses,
+        'today_profits': today_profits_qs,
+        'today_loses': today_loses_qs,
         'safe': safe,
     }
-
     return render(request, 'daycome.html', context)
-#====================================================================================================================
-def daycome_delete(request, id):
-    daycome_to_delete = get_object_or_404(Daycome, id =id )
 
-    if "daycomeDelete" in request.POST :
-        daycome_to_delete.delete()
+
+def _handle_daycome_create(request):
+    date_str = request.POST.get('date')
+    if Daycome.objects.filter(date=date_str).exists():
+        messages.warning(request, 'تقفيل هذا اليوم محفوظ بالفعل في قاعدة البيانات')
+        return redirect('daycome')
+
+    Daycome.objects.create(
+        loses=request.POST.get('total_loses'),
+        income=request.POST.get('total_profits'),
+        date=date_str,
+        net_profit=request.POST.get('net_profit'),
+        win=request.POST.get('win'),
+        cash=request.POST.get('cash'),
+        wallet=request.POST.get('wallet'),
+        payments=request.POST.get('payments'),
+    )
+    messages.success(request, "تم حفظ تقفيل اليوم")
+    return redirect("daycome")
+
+
+def daycome_delete(request, id):
+    daycome = get_object_or_404(Daycome, id=id)
+    if "daycomeDelete" in request.POST:
+        daycome.delete()
         messages.success(request, "تم حذف التقفيل بنجاح")
         return redirect("daycome")
-#====================================================================================================================
+
+
 def daycome_update(request, id):
+    if 'daycomeUpdate' not in request.POST:
+        return
 
-    if 'daycomeUpdate' in request.POST:
-        total_profits = request.POST['total_profits']
-        total_loses = request.POST['total_loses']
-        net_profit = request.POST['net_profit']
-        win = request.POST['win']
-        cash = request.POST['cash']
-        wallet = request.POST['wallet']
-        date = request.POST['date']
+    dc = Daycome.objects.get(id=id)
+    dc.income = request.POST['total_profits']
+    dc.loses = request.POST['total_loses']
+    dc.net_profit = request.POST['net_profit']
+    dc.win = request.POST['win']
+    dc.cash = request.POST['cash']
+    dc.wallet = request.POST['wallet']
+    dc.date = request.POST['date']
+    dc.save()
 
-        edit = Daycome.objects.get(id=id)
-        edit.income = total_profits
-        edit.loses = total_loses
-        edit.net_profit = net_profit
-        edit.win = win
-        edit.cash = cash
-        edit.wallet = wallet
-        edit.date = date
-        edit.save()
+    messages.success(request, 'تم تعديل بيانات التقفيل بنجاح', extra_tags='success')
+    return redirect("daycome")
 
-        messages.success(request, 'تم تعديل بيانات التقفيل بنجاح', extra_tags='success')
-        return redirect("daycome")
-#====================================================================================================================
+
+# ─── Safe ────────────────────────────────────────────────────────────────────
+
 def safe(request):
-    safe_instance = get_object_or_404(Safe, id =1)
-    cash_month = Sale.objects.filter(date__date=timezone.now().date(),method="نقدية").aggregate(Sum('paid'))['paid__sum'] or 0
-    wallet_month = Sale.objects.filter(date__date=timezone.now().date(),method="محفظة").aggregate(Sum('paid'))['paid__sum'] or 0
+    safe_instance = get_object_or_404(Safe, id=1)
+    today = timezone.now().date()
+
+    cash_month = Sale.objects.filter(date__date=today, method="نقدية").aggregate(Sum('paid'))['paid__sum'] or 0
+    wallet_month = Sale.objects.filter(date__date=today, method="محفظة").aggregate(Sum('paid'))['paid__sum'] or 0
+
     if request.method == 'POST':
-        if 'deposit' in request.POST :
-            amount = request.POST.get('amount')
+        if 'deposit' in request.POST:
+            amount = Decimal(request.POST.get('amount'))
             kind = request.POST.get('kind')
-            amount = Decimal(amount)
-            
-            if kind == 'درج':  
+            if kind == 'درج':
                 safe_instance.cash += amount
-            elif kind == 'محفظة':  
+            elif kind == 'محفظة':
                 safe_instance.wallet += amount
-            
             safe_instance.save()
-            
             messages.success(request, "تم الايداع بنجاح")
-            return redirect('safe') 
-    
-        if 'cashToWallet' in request.POST:
-            ctw = Decimal(request.POST.get('ctw'))
-            if safe_instance.cash >= ctw:
-                safe_instance.cash -= ctw
-                safe_instance.wallet += ctw
-                safe_instance.save()
-                messages.success(request, "تم الترحيل بنجاح")
-            else:
-                messages.error(request, "الرصيد الحالي غير كافي لهذه العملية")
             return redirect('safe')
+
+        if 'cashToWallet' in request.POST:
+            return _transfer_safe(request, safe_instance, from_field='cash', to_field='wallet', key='ctw')
 
         if 'walletToCash' in request.POST:
-            wtc = Decimal(request.POST.get('wtc'))
-            if safe_instance.wallet >= wtc:
-                safe_instance.wallet -= wtc
-                safe_instance.cash += wtc
-                safe_instance.save()
-                messages.success(request, "تم الترحيل بنجاح")
-            else:
-                messages.error(request, "الرصيد الحالي غير كافي لهذه العملية")
-            return redirect('safe')
+            return _transfer_safe(request, safe_instance, from_field='wallet', to_field='cash', key='wtc')
 
-    context = {"safe" : safe_instance, "cash_month":cash_month, "wallet_month":wallet_month}
+    context = {"safe": safe_instance, "cash_month": cash_month, "wallet_month": wallet_month}
+    return render(request, "safe.html", context)
 
-    return render(request,"safe.html", context)
-#====================================================================================================================
+
+def _transfer_safe(request, safe_instance, from_field, to_field, key):
+    amount = Decimal(request.POST.get(key))
+    source_balance = getattr(safe_instance, from_field)
+    if source_balance >= amount:
+        setattr(safe_instance, from_field, source_balance - amount)
+        setattr(safe_instance, to_field, getattr(safe_instance, to_field) + amount)
+        safe_instance.save()
+        messages.success(request, "تم الترحيل بنجاح")
+    else:
+        messages.error(request, "الرصيد الحالي غير كافي لهذه العملية")
+    return redirect('safe')
+
+
 def safe_update(request, id):
+    safe_instance = Safe.objects.get(id=id)
 
     if 'cashUpdate' in request.POST:
-        cash = request.POST['cash']
-        edit = Safe.objects.get(id=id)
-        edit.cash = cash
-        edit.save()
+        safe_instance.cash = request.POST['cash']
+        safe_instance.save()
         messages.success(request, 'تم تعديل رصيد الدرج', extra_tags='success')
         return redirect("safe")
 
     if 'walletUpdate' in request.POST:
-        wallet = request.POST['wallet']
-        edit = Safe.objects.get(id=id)
-        edit.wallet = wallet
-        edit.save()
-        messages.success(request, 'تم تعديل رصيد الدرج', extra_tags='success')
+        safe_instance.wallet = request.POST['wallet']
+        safe_instance.save()
+        messages.success(request, 'تم تعديل رصيد المحفظة', extra_tags='success')
         return redirect("safe")
-#====================================================================================================================
+
+
+# ─── Suppliers ───────────────────────────────────────────────────────────────
+
 @login_required(login_url="login")
 def suppliers(request):
-    suppliers = Supplier.objects.all()
-    paginator = Paginator(suppliers ,30)
     page = request.GET.get('page')
-    try:
-        supplier_list = paginator.page(page)
-    except PageNotAnInteger:
-        supplier_list = paginator.page(1)
-    except EmptyPage :
-        supplier_list = paginator.page(paginator.num_pages)
+    supplier_list = paginate(Supplier.objects.all(), page, per_page=30)
 
-    if "addSupplier" in request.POST :
-        name = request.POST.get('name')
-        for_him = request.POST.get('for_him')
-        phone = request.POST.get('phone')
-        if Supplier.objects.filter(name=name).exists():
-            messages.warning(request, f'اسم ألمورد ({name}) موجود بالفعل في قاعدة البيانات')
-            return redirect("suppliers")
+    if "addSupplier" in request.POST:
+        return _handle_add_supplier(request)
 
-        Supplier.objects.create(name=name, for_him=for_him, phone=phone)
-        messages.success(request,"تم اضافة مورد بنجاح")
-        return redirect("suppliers")
-    
-        
-    
-    if 'search' in request.POST :
+    if 'search' in request.POST:
         search_input = request.POST.get('searchInput')
-        results = [result['id'] for result in Supplier.objects.all().filter(Q(name__icontains=search_input)).values()]
-        supplier_list = [Supplier.objects.get(pk = id) for id in results]
+        supplier_list = list(Supplier.objects.filter(Q(name__icontains=search_input)))
+
+    return render(request, "suppliers.html", {'suppliers': supplier_list})
 
 
-    context ={'suppliers': supplier_list}
-
-    return render(request,"suppliers.html", context)
-#====================================================================================================================
-def supplier_update(request, id):
-
-    if 'supplierUpdate' in request.POST:
-        name = request.POST['name']
-        for_him = request.POST['for_him']
-        phone = request.POST['phone']
-
-        name = name.strip()
-        old_supplier_data = Supplier.objects.filter(id=id).values().first()
-
-        if Supplier.objects.filter(name=name).exclude(id=id).exists():
-            messages.warning(request, f'اسم المورد ({name}) موجود بالفعل في قاعدة البيانات')
-            return redirect("suppliers")
-        
-        edit = Supplier.objects.get(id=id)
-
-        edit.name = name
-        edit.for_him = for_him
-        edit.phone = phone
-        edit.save()
-
-        messages.success(request, 'تم تعديل بيانات المورد بنجاح', extra_tags='success')
+def _handle_add_supplier(request):
+    name = request.POST.get('name')
+    if Supplier.objects.filter(name=name).exists():
+        messages.warning(request, f'اسم ألمورد ({name}) موجود بالفعل في قاعدة البيانات')
         return redirect("suppliers")
 
-#====================================================================================================================
-def supplier_pay(request, id):
-    supplier_to_pay = get_object_or_404(Supplier, id =id )
-    if "supplierPaid" in request.POST:
-        paid = request.POST.get("paid")
-        paid = Decimal(paid)
-        supplier_to_pay.for_him -= paid
-        supplier_to_pay.save()
+    Supplier.objects.create(
+        name=name,
+        for_him=request.POST.get('for_him'),
+        phone=request.POST.get('phone'),
+    )
+    messages.success(request, "تم اضافة مورد بنجاح")
+    return redirect("suppliers")
 
+
+def supplier_update(request, id):
+    if 'supplierUpdate' not in request.POST:
+        return
+
+    name = request.POST['name'].strip()
+    if Supplier.objects.filter(name=name).exclude(id=id).exists():
+        messages.warning(request, f'اسم المورد ({name}) موجود بالفعل في قاعدة البيانات')
+        return redirect("suppliers")
+
+    supplier = Supplier.objects.get(id=id)
+    supplier.name = name
+    supplier.for_him = request.POST['for_him']
+    supplier.phone = request.POST['phone']
+    supplier.save()
+
+    messages.success(request, 'تم تعديل بيانات المورد بنجاح', extra_tags='success')
+    return redirect("suppliers")
+
+
+def supplier_pay(request, id):
+    supplier = get_object_or_404(Supplier, id=id)
+    if "supplierPaid" in request.POST:
+        supplier.for_him -= Decimal(request.POST.get("paid"))
+        supplier.save()
         messages.success(request, 'تم السداد للمورد بنجاح', extra_tags='success')
         return redirect("suppliers")
 
-#====================================================================================================================
-def supplier_delete(request, id):
-    supplier_to_delete = get_object_or_404(Supplier, id =id )
 
-    if "supplierDelete" in request.POST :
-        supplier_to_delete.delete()
+def supplier_delete(request, id):
+    supplier = get_object_or_404(Supplier, id=id)
+    if "supplierDelete" in request.POST:
+        supplier.delete()
         messages.success(request, "تم حذف العميل بنجاح")
         return redirect("suppliers")
-#====================================================================================================================
-def supplier_page (request, id):
-        pass
+
+
+def supplier_page(request, id):
+    pass

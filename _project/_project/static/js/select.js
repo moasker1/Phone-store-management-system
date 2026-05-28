@@ -8,8 +8,7 @@ function selection(){
     
     let drop ='down';
     searchInput.onkeyup=()=>{
-        if(searchInput.value!=''){
-        searchRes.style.display='block'
+        if(searchInput.value!=''){                                                                                                
         let filter = searchInput.value.toUpperCase();
         let tr= suplliersul.getElementsByTagName('tr');
                     for(var i=0; i<tr.length; i++){
@@ -35,7 +34,7 @@ function selection(){
                         }
                         
                     }
-        }else{searchRes.style.display='none'}
-    }
-    }
+                }else{searchRes.style.display='none'}
+            }
+        }
     
